@@ -6,7 +6,7 @@ from datetime import datetime, time
 cred = credentials.Certificate({
     "type": "service_account",
     "project_id": "sirisampadaclinic",
-    private_key_id : st.secrets['private_key_id'],
+    private_key_id : st.secrets['firebase']['private_key_id'],
     private_key : st.secrets['firebase']['private_key'],
 # Fix line breaks
     "client_email": st.secrets['firebase']['client_email'],
