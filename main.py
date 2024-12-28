@@ -80,8 +80,8 @@ translations = {
         "kannada": "ನೇಮಕಾತಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ನಿಮ್ಮ ಟೋಕನ್ ಸಂಖ್ಯೆ"
     },
     "clinic_info": {
-        "english": "Welcome to Siri Sampada Child Care Clinic",
-        "kannada": "ಸಿರಿ ಸಮ್ಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್ ಗೆ"
+        "english": "Welcome",
+        "kannada": "ಸ್ವಾಗತ"
     },
 
     "sunday_warning": {
@@ -120,7 +120,6 @@ def get_available_slots(date):
         "8:00-8:30 AM": datetime.strptime("08:00", "%H:%M").time(),
         "8:30-9:00 AM": datetime.strptime("08:30", "%H:%M").time(),
         "9:00-9:30 AM": datetime.strptime("09:00", "%H:%M").time(),
-        "9:30-10:00 AM": datetime.strptime("09:30", "%H:%M").time(),
         "6:00-6:30 PM": datetime.strptime("18:00", "%H:%M").time(),
         "6:30-7:00 PM": datetime.strptime("18:30", "%H:%M").time(),
         "7:00-7:30 PM": datetime.strptime("19:00", "%H:%M").time(),
@@ -163,59 +162,59 @@ def get_children_for_today():
 # Pages
 def home_page():
     st.title(translations["home_title"][st.session_state.language])
-    st.image("clinic_logo.png", use_container_width=True)
 
+    # Welcome message first
     st.header(translations["clinic_info"][st.session_state.language])
-    
-
     st.write("**Phone no. :** 097428 52267")
 
     # Clinic images
     st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
     st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
 
-    
-# Doctor's Information
-st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
-col1, col2 = st.columns([3, 2])
-with col1:
-         st.write("""
-         **Dr. Keerthi B. J.**  
-         - M.D. (Pediatrics), Fellow in Neonatology  
-         - Neonatologist & Pediatrician  
-         - Associate Professor in Pediatrics, District Hospital, Mandya  
-         """)
+    # About the doctor
+    st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        st.write("""
+        **Dr. Keerthi B. J.**  
+        - M.D. (Pediatrics), Fellow in Neonatology  
+        - Neonatologist & Pediatrician  
+        - Associate Professor in Pediatrics, District Hospital, Mandya  
+        """)
 
-         with col2:
-             st.markdown(
-                 """
-                 <style>
-                 .rounded-img {
-                     border-radius: 15px;
-                     width: 100%;
-                     max-width: 200px;
-                     margin: auto;
-                 }
-                 </style>
-                 """, unsafe_allow_html=True
-             )
-             st.markdown(
-                 f"""
-                 <img src="doctor_photo.jpg" alt="Doctor" class="rounded-img">
-                 """, unsafe_allow_html=True
-             )
-st.subheader("Location")
-st.write("Click the button below to open the clinic location in Google Maps:")
-st.markdown("""
-        <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
-            <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
-                View on Google Maps
-            </button>
-        </a>
-    """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(
+            """
+            <style>
+            .rounded-img {
+                border-radius: 15px;
+                width: 100%;
+                max-width: 200px;
+                margin: auto;
+            }
+            </style>
+            """, unsafe_allow_html=True
+        )
+        st.markdown(
+            f"""
+            <img src="doctor_photo.jpg" alt="Doctor" class="rounded-img">
+            """, unsafe_allow_html=True
+        )
+
+    # Location and Google Maps button
+    st.subheader("Location")
+    st.write("Click the button below to open the clinic location in Google Maps:")
+    st.markdown("""
+            <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
+                <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
+                    View on Google Maps
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
 
     # Address and phone
-st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
+    st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
+
 
 def appointment_page():
     st.title(translations["appointment_title"][st.session_state.language])
