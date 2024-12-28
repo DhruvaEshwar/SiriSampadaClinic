@@ -211,25 +211,24 @@ def prescription_page():
                     "notes": notes
                 }
                 st.write("Prescription saved successfully!")
-
 with st.sidebar:
     st.title("Navigation")
     if st.button("Home"):
         st.session_state.page = "home"
-        st.rerun()
+        st.experimental_rerun()
 
     if st.button("Book Appointment"):
         st.session_state.page = "booking"
-        st.rerun()
+        st.experimental_rerun()
 
     if st.button("Prescription"):
         st.session_state.page = "prescription"
-        st.rerun()
+        st.experimental_rerun()
 
 # Navigation Logic
 if st.session_state.page == "home":
     home_page()
 elif st.session_state.page == "booking":
-    appointment_page()
+    booking_page()
 elif st.session_state.page == "prescription":
     prescription_page()
