@@ -170,11 +170,19 @@ def home_page():
 
     st.header(translations["clinic_info"][st.session_state.language])
     st.write("**" + translations["doctor_info"][st.session_state.language] + "**")
+
     st.write("**Phone no. :** 097428 52267")
 
+    # Clinic images
     st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
     st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
-
+    # Doctor's Information
+    st.write("""
+     **Dr. Keerthi B. J.**
+     - M.D. (Pediatrics), Fellow in Neonatology  
+     - Neonatologist & Pediatrician  
+     - Associate Professor in Pediatrics, District Hospital, Mandya
+     """)
     st.subheader("Location")
     st.write("Click the button below to open the clinic location in Google Maps:")
     st.markdown("""
@@ -184,6 +192,9 @@ def home_page():
             </button>
         </a>
     """, unsafe_allow_html=True)
+
+    # Address and phone
+    st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
 
 def appointment_page():
     st.title(translations["appointment_title"][st.session_state.language])
@@ -199,7 +210,7 @@ def appointment_page():
     date = st.date_input(translations["appointment_title"][st.session_state.language], min_value=available_dates[0], max_value=available_dates[-1])
 
     # Check if the selected date is a Sunday
-    if date.weekday() == 6:  # 6 corresponds to Sunday
+    if date.weekday() == 6:  # 6 is Sunday
         st.warning(translations["sunday_warning"][st.session_state.language])
         return
 
@@ -255,6 +266,7 @@ def home():
         prescription_page()
 
 home()
+
 
 
 
