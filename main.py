@@ -120,6 +120,7 @@ def get_available_slots(date):
         "8:00-8:30 AM": time(8, 0),
         "8:30-9:00 AM": time(8, 30),
         "9:00-9:30 AM": time(9, 0),
+        "9:30-10:00 AM": time(9, 30),
         "6:00-6:30 PM": time(18, 0),
         "6:30-7:00 PM": time(18, 30),
         "7:00-7:30 PM": time(19, 0),
@@ -230,6 +231,7 @@ def prescription_page():
 
 # Main page selection
 def home():
+    # Language toggle button
     if st.session_state.language == "english":
         if st.button("Translate to Kannada"):
             translate_to_kannada()
