@@ -1,7 +1,7 @@
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime, time
+from datetime import datetime, timedelta, time
 
 # Firebase setup
 cred = credentials.Certificate({
@@ -147,8 +147,20 @@ def appointment_page():
     st.title("Book an Appointment")
     st.markdown("Fill in the details below to book an appointment.")
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    date = st.date_input("Select Date", min_value=datetime.now().date())
+    today = datetime.now().date()
+
+    # Create a list of available dates excluding Sundays
+    available_dates = [today + timedelta(days=i) for i in range(7)]
+    available_dates = [date for date in available_dates if date.weekday() != 6]  # Remove Sundays
+
+    # Select a date, but only allow available dates (i.e., excluding Sundays)
+    date = st.date_input("Select Date", min_value=available_dates[0], max_value=available_dates[-1])
+
+    # Check if the selected date is a Sunday
+    if date.weekday() == 6:  # 6 corresponds to Sunday
+        st.warning("Sunday is a holiday. Please select another day.")
+        return
+
     available_slots = get_available_slots(date)
 
     if available_slots:
@@ -170,7 +182,7 @@ def appointment_page():
         patient_details.append({"name": name, "age": age})
 
     if st.button("Book Appointment"):
-        token = len(db.collection(today).get()) + 1
+        token = len(db.collection(today.strftime("%Y-%m-%d")).get()) + 1
         save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
         st.success(f"Appointment booked successfully! Your token number is {token}.")
 
@@ -196,7 +208,7 @@ def prescription_page():
             st.write("No appointments for today.")
         else:
             selected_child = st.selectbox("Select a child", [f"{child['name']} ({child['age']})" for child in children])
-            selected_child_data = children[next(i for i, child in enumerate(children) if f"{child['name']} ({child['age']})" == selected_child)]
+            selected_child_data = next(child for child in children if f"{child['name']} ({child['age']})" == selected_child)
 
             st.write(f"**Name:** {selected_child_data['name']}")
             st.write(f"**Age:** {selected_child_data['age']}")
@@ -214,24 +226,17 @@ def prescription_page():
                     "notes": notes
                 }
                 st.write("Prescription saved successfully!")
-with st.sidebar:
-    st.title("Navigation")
-    if st.button("Home"):
-        st.session_state.page = "home"
-        st.rerun()
+                st.write(prescription)
 
-    if st.button("Book Appointment"):
-        st.session_state.page = "booking"
-        st.rerun()
+def home():
+    page = st.selectbox("Select a page", ["Home", "Book Appointment", "Prescription Entry"])
+    if page == "Home":
+        home_page()
+    elif page == "Book Appointment":
+        appointment_page()
+    elif page == "Prescription Entry":
+        prescription_page()
 
-    if st.button("Prescription"):
-        st.session_state.page = "prescription"
-        st.rerun()
+home()
 
-# Navigation Logic
-if st.session_state.page == "home":
-    home_page()
-elif st.session_state.page == "booking":
-    appointment_page()
-elif st.session_state.page == "prescription":
-    prescription_page()
+
