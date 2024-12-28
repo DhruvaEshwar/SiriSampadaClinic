@@ -25,6 +25,9 @@ except ValueError:
 
 db = firestore.client()
 
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
 # Functions for Firebase interactions
 def save_appointment(date, parent_name, phone, address, num_patients, patient_details, slot, token):
     collection = db.collection(date)
@@ -86,8 +89,7 @@ def get_children_for_today():
                 "age": patient["age"]
             })
     return children
-if "page" not in st.session_state:
-    st.session_state.page = "home"
+
 # Pages
 def home_page():
     st.title("Siri Sampada Child Care Clinic")
