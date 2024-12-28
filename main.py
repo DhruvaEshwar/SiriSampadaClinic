@@ -3,6 +3,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime, time
 
+# Firebase setup
 cred = credentials.Certificate({
     "type": "service_account",
     "project_id": "sirisampadaclinic",
@@ -17,17 +18,14 @@ cred = credentials.Certificate({
     "universe_domain": st.secrets['firebase']['universe_domain']
 })
 
-
-# Initialize Firebase app
 try:
     firebase_admin.get_app()  # Check if app is already initialized
 except ValueError:
     firebase_admin.initialize_app(cred)
 
-# Get Firestore client
 db = firestore.client()
 
-# Function to save appointment data
+# Functions for Firebase interactions
 def save_appointment(date, parent_name, phone, address, num_patients, patient_details, slot, token):
     collection = db.collection(date)
     collection.add({
@@ -41,7 +39,6 @@ def save_appointment(date, parent_name, phone, address, num_patients, patient_de
         "timestamp": firestore.SERVER_TIMESTAMP
     })
 
-# Function to fetch available slots
 def get_available_slots(date):
     collection = db.collection(date.strftime("%Y-%m-%d"))
     appointments = collection.stream()
@@ -72,22 +69,66 @@ def get_available_slots(date):
     available_slots = [slot for slot, count in slot_counts.items() if count < 10]
     return available_slots
 
-# Home page
+def validate_password(password):
+    return password == "dse@14"
+
+def get_children_for_today():
+    today = datetime.now().strftime("%Y-%m-%d")
+    collection = db.collection(today)
+    appointments = collection.stream()
+    children = []
+
+    for doc in appointments:
+        data = doc.to_dict()
+        for patient in data["patient_details"]:
+            children.append({
+                "name": patient["name"],
+                "age": patient["age"]
+            })
+    return children
+
+# Pages
 def home_page():
     st.title("Siri Sampada Child Care Clinic")
-    st.image("clinic_logo.png", width=900)
+    st.image("clinic_logo.png", use_container_width=True)
 
     st.header("Welcome to Siri Sampada Child Care Clinic")
     st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
+    st.write("**Phone no. :** 097428 52267")
 
-    st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=600)
-    st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=600)
+    st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
+    st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
 
-    st.subheader("About the Doctor ~ Dr. Keerti B. J.")
-    st.write("""
-        Dr. Keerti B. J. is a highly qualified pediatrician with extensive experience in child healthcare. 
-        He holds a [MBBS, MD] degree and has been providing expert care for children for several years.
-    """)
+    st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
+    col1, col2 = st.columns([3, 2])
+
+    with col1:
+        st.write("""
+        **Dr. Keerthi B. J.**  
+        - M.D. (Pediatrics), Fellow in Neonatology  
+        - Neonatologist & Pediatrician  
+        - Associate Professor in Pediatrics, District Hospital, Mandya  
+        """)
+
+        with col2:
+            st.markdown(
+                """
+                <style>
+                .rounded-img {
+                    border-radius: 15px;
+                    width: 100%;
+                    max-width: 200px;
+                    margin: auto;
+                }
+                </style>
+                """, unsafe_allow_html=True
+            )
+            st.markdown(
+                f"""
+                <img src="doctor_photo.jpg" alt="Doctor" class="rounded-img">
+                """, unsafe_allow_html=True
+            )
+
 
     st.subheader("Location")
     st.write("Click the button below to open the clinic location in Google Maps:")
@@ -99,107 +140,96 @@ def home_page():
         </a>
     """, unsafe_allow_html=True)
 
-    st.write("**Phone no. :** 09742852267")
-
-# Booking page
-def booking_page():
+def appointment_page():
     st.title("Book an Appointment")
+    st.markdown("Fill in the details below to book an appointment.")
 
-    # Back Button
-    if st.button("Back to Home"):
+    today = datetime.now().strftime("%Y-%m-%d")
+    date = st.date_input("Select Date", min_value=datetime.now().date())
+    available_slots = get_available_slots(date)
+
+    if available_slots:
+        slot = st.selectbox("Select Time Slot", available_slots)
+    else:
+        st.write("No slots available for the selected date.")
+        return
+
+    parent_name = st.text_input("Parent's Name")
+    phone = st.text_input("Phone Number")
+    address = st.text_area("Address")
+    num_patients = st.number_input("Number of Patients", min_value=1, max_value=5, step=1)
+
+    patient_details = []
+    for i in range(num_patients):
+        st.write(f"Patient {i + 1}:")
+        name = st.text_input(f"Name of Patient {i + 1}")
+        age = st.number_input(f"Age of Patient {i + 1}", min_value=0, max_value=18, step=1)
+        patient_details.append({"name": name, "age": age})
+
+    if st.button("Book Appointment"):
+        token = len(db.collection(today).get()) + 1
+        save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
+        st.success(f"Appointment booked successfully! Your token number is {token}.")
+
+def prescription_page():
+    if "prescription_access" not in st.session_state:
+        st.session_state.prescription_access = False
+
+    if not st.session_state.prescription_access:
+        st.title("Prescription Access")
+        password = st.text_input("Enter the Doctor's Password", type="password")
+        if st.button("Unlock"):
+            if validate_password(password):
+                st.session_state.prescription_access = True
+                st.success("Access granted! You can now enter prescriptions.")
+                st.rerun()
+            else:
+                st.error("Incorrect password. Please try again.")
+
+    if st.session_state.prescription_access:
+        st.title("Prescription Entry")
+        children = get_children_for_today()
+        if not children:
+            st.write("No appointments for today.")
+        else:
+            selected_child = st.selectbox("Select a child", [f"{child['name']} ({child['age']})" for child in children])
+            selected_child_data = children[next(i for i, child in enumerate(children) if f"{child['name']} ({child['age']})" == selected_child)]
+
+            st.write(f"**Name:** {selected_child_data['name']}")
+            st.write(f"**Age:** {selected_child_data['age']}")
+
+            disease = st.text_input("Enter Disease/Condition")
+            medicine = st.text_area("Prescribed Medicines (include dosage and frequency)")
+            notes = st.text_area("Additional Notes (optional)")
+
+            if st.button("Save Prescription"):
+                prescription = {
+                    "name": selected_child_data["name"],
+                    "age": selected_child_data["age"],
+                    "disease": disease,
+                    "medicine": medicine,
+                    "notes": notes
+                }
+                st.write("Prescription saved successfully!")
+
+with st.sidebar:
+    st.title("Navigation")
+    if st.button("Home"):
         st.session_state.page = "home"
         st.rerun()
 
-    # Parent details form
-    with st.form(key="parent_form"):
-        parent_name = st.text_input("Parent's Name")
-        phone = st.text_input("Parent's Phone Number")
-        address = st.text_area("Address")
-        num_patients = st.selectbox("Number of Patients", [1, 2, 3, 4])
+    if st.button("Book Appointment"):
+        st.session_state.page = "booking"
+        st.rerun()
 
-        submit_button = st.form_submit_button("Proceed to Child Details")
+    if st.button("Prescription"):
+        st.session_state.page = "prescription"
+        st.rerun()
 
-        if submit_button:
-            if not parent_name or not phone or not address:
-                st.error("Please fill in all the parent details before proceeding.")
-            else:
-                st.session_state.parent_data = {
-                    "parent_name": parent_name,
-                    "phone": phone,
-                    "address": address,
-                    "num_patients": num_patients
-                }
-                st.rerun()
-
-    # Child details form
-    if "parent_data" in st.session_state:
-        parent_data = st.session_state.parent_data
-        patient_details = []
-        age_options = [f"{i} month" for i in range(1, 13)] + [f"{i} year" for i in range(2, 18)]
-
-        for i in range(parent_data["num_patients"]):
-            st.subheader(f"Patient {i + 1}")
-            name = st.text_input(f"Child {i + 1} Name", key=f"name_{i + 1}")
-            age = st.selectbox(f"Child {i + 1} Age", age_options, key=f"age_{i + 1}")
-            service_type = st.selectbox(f"Service Type for Child {i + 1}", ["Consultation", "Vaccination"], key=f"service_{i + 1}")
-
-            patient_details.append({"name": name, "age": age, "service": service_type})
-
-        appointment_date = st.date_input("Select Appointment Date")
-        slots = get_available_slots(appointment_date)
-
-        if not slots:
-            st.error("No available slots for this date. Please choose another date.")
-            return
-
-        selected_slot = st.selectbox("Available Slots", slots)
-
-        if st.button("Submit Appointment"):
-            total_cost = sum(250 if details["service"] == "Consultation" else 200 for details in patient_details)
-            collection = db.collection(appointment_date.strftime("%Y-%m-%d"))
-            token = len([doc for doc in collection.stream()]) + 1
-
-            save_appointment(
-                appointment_date.strftime("%Y-%m-%d"),
-                parent_data["parent_name"],
-                parent_data["phone"],
-                parent_data["address"],
-                parent_data["num_patients"],
-                patient_details,
-                selected_slot,
-                token
-            )
-
-            st.success("Appointment booked successfully!")
-            st.write(f"**Parent Name:** {parent_data['parent_name']}")
-            st.write(f"**Phone:** {parent_data['phone']}")
-            st.write(f"**Number of Patients:** {parent_data['num_patients']}")
-            for i, details in enumerate(patient_details):
-                st.write(f"**Child {i+1}:** {details['name']} | Age: {details['age']} | Service: {details['service']}")
-            st.write(f"**Appointment Date:** {appointment_date}")
-            st.write(f"**Slot:** {selected_slot}")
-            st.write(f"**Token Number:** {token}")
-            st.write(f"**Total Cost:** ₹{total_cost}")
-
-            del st.session_state.parent_data
-            st.rerun()
-
-# Main app
-def main():
-    # Sidebar with navigation
-    with st.sidebar:
-        if st.button("Book Appointment"):
-            st.session_state.page = "booking"
-            st.rerun()
-
-    # Page navigation logic
-    if "page" not in st.session_state:
-        st.session_state.page = "home"
-
-    if st.session_state.page == "home":
-        home_page()
-    elif st.session_state.page == "booking":
-        booking_page()
-
-if __name__ == "__main__":
-    main()
+# Navigation Logic
+if st.session_state.page == "home":
+    home_page()
+elif st.session_state.page == "booking":
+    appointment_page()
+elif st.session_state.page == "prescription":
+    prescription_page()
