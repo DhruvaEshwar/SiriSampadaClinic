@@ -176,6 +176,7 @@ def home_page():
     # Clinic images
     st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
     st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
+    
     # Doctor's Information
     st.write("""
      **Dr. Keerthi B. J.**
