@@ -1,7 +1,7 @@
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 
 # Firebase setup
 cred = credentials.Certificate({
@@ -25,20 +25,23 @@ except ValueError:
 
 db = firestore.client()
 
-if "page" not in st.session_state:
-    st.session_state.page = "home"
+# Initialize session state for language and button state
+if "language" not in st.session_state:
+    st.session_state.language = "english"  # Default language
+
+if "translate_button_clicked" not in st.session_state:
+    st.session_state.translate_button_clicked = False  # Track button click state
 
 # Language toggle functions
 def translate_to_kannada():
     st.session_state.language = "kannada"
+    st.session_state.translate_button_clicked = True
 
 def translate_to_english():
     st.session_state.language = "english"
+    st.session_state.translate_button_clicked = False
 
-if "language" not in st.session_state:
-    st.session_state.language = "english"  # Default language
-
-# Language strings
+# Language translations
 translations = {
     "home_title": {
         "english": "Siri Sampada Child Care Clinic",
@@ -117,14 +120,14 @@ def get_available_slots(date):
     appointments = collection.stream()
 
     all_slots = {
-        "8:00-8:30 AM": time(8, 0),
-        "8:30-9:00 AM": time(8, 30),
-        "9:00-9:30 AM": time(9, 0),
-        "9:30-10:00 AM": time(9, 30),
-        "6:00-6:30 PM": time(18, 0),
-        "6:30-7:00 PM": time(18, 30),
-        "7:00-7:30 PM": time(19, 0),
-        "7:30-8:00 PM": time(19, 30)
+        "8:00-8:30 AM": datetime.strptime("08:00", "%H:%M").time(),
+        "8:30-9:00 AM": datetime.strptime("08:30", "%H:%M").time(),
+        "9:00-9:30 AM": datetime.strptime("09:00", "%H:%M").time(),
+        "9:30-10:00 AM": datetime.strptime("09:30", "%H:%M").time(),
+        "6:00-6:30 PM": datetime.strptime("18:00", "%H:%M").time(),
+        "6:30-7:00 PM": datetime.strptime("18:30", "%H:%M").time(),
+        "7:00-7:30 PM": datetime.strptime("19:00", "%H:%M").time(),
+        "7:30-8:00 PM": datetime.strptime("19:30", "%H:%M").time()
     }
 
     current_date = datetime.now().date()
@@ -202,22 +205,25 @@ def appointment_page():
 
     available_slots = get_available_slots(date)
 
-    if available_slots:
-        slot = st.selectbox(translations["time_slot"][st.session_state.language], available_slots)
-        parent_name = st.text_input(translations["parent_name"][st.session_state.language])
-        phone = st.text_input(translations["phone_number"][st.session_state.language])
-        address = st.text_area(translations["address"][st.session_state.language])
+    if not available_slots:
+        st.warning("No available slots for the selected date.")
+        return
 
-        num_patients = st.number_input(translations["num_patients"][st.session_state.language], min_value=1, max_value=5)
+    slot = st.selectbox(translations["time_slot"][st.session_state.language], available_slots)
+    parent_name = st.text_input(translations["parent_name"][st.session_state.language])
+    phone = st.text_input(translations["phone_number"][st.session_state.language])
+    address = st.text_area(translations["address"][st.session_state.language])
 
-        if st.button(translations["book_button"][st.session_state.language]):
-            if parent_name and phone and address:
-                token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                patient_details = [{"name": st.text_input("Patient Name"), "age": st.text_input("Age")} for _ in range(num_patients)]
-                save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
-                st.success(f"{translations['appointment_saved'][st.session_state.language]} {token}")
-            else:
-                st.error("Please fill in all details.")
+    num_patients = st.number_input(translations["num_patients"][st.session_state.language], min_value=1, max_value=5)
+
+    if st.button(translations["book_button"][st.session_state.language]):
+        if parent_name and phone and address:
+            token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            patient_details = [{"name": st.text_input("Patient Name"), "age": st.text_input("Age")} for _ in range(num_patients)]
+            save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
+            st.success(f"{translations['appointment_saved'][st.session_state.language]} {token}")
+        else:
+            st.error("Please fill in all details.")
 
 def prescription_page():
     st.title(translations["prescription_access"][st.session_state.language])
@@ -232,10 +238,10 @@ def prescription_page():
 # Main page selection
 def home():
     # Language toggle button
-    if st.session_state.language == "english":
+    if st.session_state.language == "english" and not st.session_state.translate_button_clicked:
         if st.button("Translate to Kannada"):
             translate_to_kannada()
-    elif st.session_state.language == "kannada":
+    elif st.session_state.language == "kannada" and st.session_state.translate_button_clicked:
         if st.button("Translate Back to English"):
             translate_to_english()
 
@@ -249,6 +255,9 @@ def home():
         prescription_page()
 
 home()
+
+
+
 
 
 
