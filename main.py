@@ -81,11 +81,14 @@ translations = {
     },
     "clinic_info": {
         "english": "Welcome to Siri Sampada Child Care Clinic",
-        "kannada": "ಸಿರಿ ಸಮ್ಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್ ಗೆ ಸ್ವಾಗತ"
+        "kannada": "ಸಿರಿ ಸಮ್ಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್ ಗೆ"
     },
+
+    
     "doctor_info": {
-        "english": "Dr. Keerthi B. J. - M.D. (Pediatrics), Fellow in Neonatology",
-        "kannada": "ಡಾ. ಕಿರ್ತಿ ಬಿ. ಜೆ - ಎಂ.ಡಿ (ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೆಟಾಲಾಜಿಯಲ್ಲಿ ಫೆಲೋ"
+        "english": "Dr. Keerthi B. J., \nM.D. (Pediatrics), Fellow in Neonatology, \nNeonatologist & Pediatrician, \nAssociate Professor in Pediatrics, District Hospital, Mandya",
+        "kannada": "ಡಾ. ಕಿರ್ತಿ ಬಿ. ಜೆ - \nಎಂ.ಡಿ (ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೆಟಾಲಾಜಿಯಲ್ಲಿ ಫೆಲೋ, \nನ್ಯೋನೇಟಾಲಾಜಿಸ್ಟ್ ಮತ್ತು ಪೀಡಿಯಾಟ್ರಿಷಿಯನ್, \nಜಿಲ್ಲಾ ಆಸ್ಪತ್ರೆಯಲ್ಲಿ ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್ ಅಸೋಸಿಯೇಟ್ ಪ್ರೊಫೆಸರ್, ಮಂಡ್ಯ"
+        
     },
     "sunday_warning": {
         "english": "Sunday is a holiday. Please select another day.",
@@ -178,12 +181,7 @@ def home_page():
     st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
     
     # Doctor's Information
-    st.write("""
-     **Dr. Keerthi B. J.**
-     - M.D. (Pediatrics), Fellow in Neonatology  
-     - Neonatologist & Pediatrician  
-     - Associate Professor in Pediatrics, District Hospital, Mandya
-     """)
+    
     st.subheader("Location")
     st.write("Click the button below to open the clinic location in Google Maps:")
     st.markdown("""
