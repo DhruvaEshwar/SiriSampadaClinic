@@ -230,6 +230,6 @@ with st.sidebar:
 if st.session_state.page == "home":
     home_page()
 elif st.session_state.page == "booking":
-    booking_page()
+    appointment_page()
 elif st.session_state.page == "prescription":
     prescription_page()
