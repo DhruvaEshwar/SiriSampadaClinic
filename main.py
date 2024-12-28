@@ -216,15 +216,15 @@ with st.sidebar:
     st.title("Navigation")
     if st.button("Home"):
         st.session_state.page = "home"
-        st.experimental_rerun()
+        st.rerun()
 
     if st.button("Book Appointment"):
         st.session_state.page = "booking"
-        st.experimental_rerun()
+        st.rerun()
 
     if st.button("Prescription"):
         st.session_state.page = "prescription"
-        st.experimental_rerun()
+        st.rerun()
 
 # Navigation Logic
 if st.session_state.page == "home":
