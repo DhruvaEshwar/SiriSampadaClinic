@@ -86,7 +86,8 @@ def get_children_for_today():
                 "age": patient["age"]
             })
     return children
-
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 # Pages
 def home_page():
     st.title("Siri Sampada Child Care Clinic")
