@@ -179,7 +179,7 @@ def home_page():
         **Dr. Keerthi B. J.**  
         - M.D. (Pediatrics), Fellow in Neonatology  
         - Neonatologist & Pediatrician  
-        - Associate Professor in Pediatrics, District Hospital, Mandya  
+        - Associate Professor in Pediatrics, Mandya District Hospital  
         """)
 
     with col2:
