@@ -59,18 +59,13 @@ def save_appointment(date, parent_name, phone, address, num_children, child_deta
         "created_at": datetime.now()
     })
 
-def get_appointments_on_date(date):
-        # Ensure date is a datetime object with time set to midnight
-        if isinstance(date, datetime):
-            date = date.replace(hour=0, minute=0, second=0, microsecond=0)  # Strip the time
-
-        # Now perform the query with the datetime object
+def get_appointments_on_date(start_timestamp, end_timestamp):
         appointments = [
             app.to_dict() for app in db.collection("appointments")
-            .where("date", "==", date)  # Compare with datetime object
+            .where("date", ">=", start_timestamp)
+            .where("date", "<=", end_timestamp)
             .stream()
         ]
-
         return appointments
 
 
@@ -143,77 +138,94 @@ def home_page():
         st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
 def prescription_page():
-        render_sidebar()
+                    # Render Sidebar (if needed)
+                    render_sidebar()
 
-        # Password Authentication
-        password = st.text_input("Enter Password to Access Prescription Page", type="password")
-        correct_password = "ssclinic"  # Updated password
-        if password != correct_password:
-            st.warning("Incorrect Password!")
-            return
+                    # Password Authentication
+                    password = st.text_input("Enter Password to Access Prescription Page", type="password")
+                    correct_password = "ssclinic"  # Updated password
+                    if password != correct_password:
+                        st.warning("Incorrect Password!")
+                        return
 
-        # Select child with an appointment on that day
-        date = st.date_input("Select Appointment Date")
-        appointments = get_appointments_on_date(date)  # Fetch appointments for the selected date
-        child_options = [
-            {
-                "label": f"{app['parent_name']} - {child['name']}",
-                "name": child["name"],
-                "age": child["age"],
-            }
-            for app in appointments for child in app["child_details"]
-        ]
+                    # Select child with an appointment on that day
+                    date = st.date_input("Select Appointment Date")
 
-        if child_options:
-            selected_child = st.selectbox(
-                "Select Child for Prescription",
-                [child["label"] for child in child_options]
-            )
+                    if date:
+                        # Convert the selected date to Firestore Timestamp range (start and end of the day)
+                        start_of_day = datetime(date.year, date.month, date.day, 0, 0, 0)
+                        end_of_day = datetime(date.year, date.month, date.day, 23, 59, 59, 999999)
 
-            # Fetch selected child details
-            child_info = next(child for child in child_options if child["label"] == selected_child)
-            st.markdown(f"### Child Name: {child_info['name']} | Age: {child_info['age']} years")
-            st.markdown(f"**Appointment Date: {date} | Time: {datetime.now().strftime('%I:%M %p')}**")
+                        # Convert to Firestore Timestamps
+                        start_timestamp = firestore.Timestamp.from_datetime(start_of_day)
+                        end_timestamp = firestore.Timestamp.from_datetime(end_of_day)
 
-            # Prescription Form
-            disease = st.text_area("Enter Disease")
+                        # Fetch appointments for the selected date
+                        appointments = get_appointments_on_date(start_timestamp, end_timestamp)
 
-            # Initialize or continue the medicine data list in session state
-            if "medicine_data" not in st.session_state:
-                st.session_state["medicine_data"] = []
+                        # Prepare options for selecting a child from the fetched appointments
+                        child_options = [
+                            {
+                                "label": f"{app['parent_name']} - {child['name']}",
+                                "name": child["name"],
+                                "age": child["age"],
+                            }
+                            for app in appointments for child in app["child_details"]
+                        ]
 
-            # Medicine Input Fields
-            with st.form(key="medicine_form", clear_on_submit=True):
-                medicine_name = st.text_input("Medicine Name")
-                dosage = st.text_input("Dosage")
-                duration = st.text_input("Duration")
-                timing = st.selectbox("Timing", ["Before Food", "After Food"])
+                        if child_options:
+                            selected_child = st.selectbox(
+                                "Select Child for Prescription",
+                                [child["label"] for child in child_options]
+                            )
 
-                submit_button = st.form_submit_button(label="Add Medicine")
+                            # Fetch selected child details
+                            child_info = next(child for child in child_options if child["label"] == selected_child)
+                            st.markdown(f"### Child Name: {child_info['name']} | Age: {child_info['age']} years")
+                            st.markdown(f"**Appointment Date: {date} | Time: {datetime.now().strftime('%I:%M %p')}**")
 
-                if submit_button:
-                    if medicine_name and dosage and duration:
-                        st.session_state["medicine_data"].append({
-                            "name": medicine_name,
-                            "dosage": dosage,
-                            "duration": duration,
-                            "timing": timing
-                        })
-                        st.success(f"Added {medicine_name}")
-                    else:
-                        st.error("Please fill in all the details")
+                            # Prescription Form
+                            disease = st.text_area("Enter Disease")
 
-            # Display added medicines
-            if st.session_state["medicine_data"]:
-                st.write("Added Medicines:")
-                for idx, med in enumerate(st.session_state["medicine_data"], 1):
-                    st.write(f"{idx}. {med['name']} - {med['dosage']} - {med['duration']} - {med['timing']}")
+                            # Initialize or continue the medicine data list in session state
+                            if "medicine_data" not in st.session_state:
+                                st.session_state["medicine_data"] = []
 
-            # Save prescription
-            if st.button("Save Prescription"):
-                st.success(f"Prescription Saved for {child_info['name']}")
-                # Optionally save the prescription to Firestore or another database here
-                st.session_state["medicine_data"] = []  # Clear the medicine data after saving
+                            # Medicine Input Fields
+                            with st.form(key="medicine_form", clear_on_submit=True):
+                                medicine_name = st.text_input("Medicine Name")
+                                dosage = st.text_input("Dosage")
+                                duration = st.text_input("Duration")
+                                timing = st.selectbox("Timing", ["Before Food", "After Food"])
+
+                                submit_button = st.form_submit_button(label="Add Medicine")
+
+                                if submit_button:
+                                    if medicine_name and dosage and duration:
+                                        st.session_state["medicine_data"].append({
+                                            "name": medicine_name,
+                                            "dosage": dosage,
+                                            "duration": duration,
+                                            "timing": timing
+                                        })
+                                        st.success(f"Added {medicine_name}")
+                                    else:
+                                        st.error("Please fill in all the details")
+
+                            # Display added medicines
+                            if st.session_state["medicine_data"]:
+                                st.write("Added Medicines:")
+                                for idx, med in enumerate(st.session_state["medicine_data"], 1):
+                                    st.write(f"{idx}. {med['name']} - {med['dosage']} - {med['duration']} - {med['timing']}")
+
+                            # Save prescription
+                            if st.button("Save Prescription"):
+                                st.success(f"Prescription Saved for {child_info['name']}")
+                                # Optionally save the prescription to Firestore or another database here
+                                st.session_state["medicine_data"] = []  # Clear the medicine data after saving
+
+                        else:
+                            st.write("No appointments found for this date.")
 
 def booking_page():
     render_sidebar()
