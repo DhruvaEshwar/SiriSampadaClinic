@@ -39,7 +39,6 @@ def toggle_sidebar():
 
 def render_sidebar():
     with st.sidebar:
-        st.button("➤ Toggle Sidebar", on_click=toggle_sidebar)
         st.button("Home", on_click=lambda: setattr(st.session_state, "page", "Home"))
         st.button("Book Appointment", on_click=lambda: setattr(st.session_state, "page", "Book Appointment"))
         st.button("Prescription Entry", on_click=lambda: setattr(st.session_state, "page", "Prescription Entry"))
