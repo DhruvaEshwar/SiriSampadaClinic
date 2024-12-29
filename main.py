@@ -80,24 +80,35 @@ def save_appointment(date, parent_name, phone, address, num_children, child_deta
     })
 
 
-def get_appointments_on_date(date):
-    try:
-        date_str = date.strftime('%Y-%m-%d')
-        appointment_ref = db.collection("appointments").document(date_str)
+def get_available_slots(date):
+    # Define time slots (morning and evening)
+    time_slots = [
+        "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
+        "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM"
+    ]
 
-        # Fetch appointments for the selected date
-        appointment_data = appointment_ref.get()
+    # Fetch all appointments for the selected date
+    date_str = date.strftime('%Y-%m-%d')
+    appointment_ref = db.collection("appointments").document(date_str)
+    appointment_data = appointment_ref.get()
 
-        # Check if the document exists
-        if appointment_data.exists:
-            return appointment_data.to_dict().get('appointments', [])
-        else:
-            return []  # Return an empty list if no appointments found
+    if appointment_data.exists:
+        # Get the existing appointments
+        appointments = appointment_data.to_dict().get('appointments', [])
+    else:
+        appointments = []
 
-    except Exception as e:
-        st.error(f"Error fetching appointments: {e}")
-        return []  # Return an empty list if there is an error
+    # Count the number of appointments for each time slot
+    slot_counts = {slot: 0 for slot in time_slots}
+    for appointment in appointments:
+        slot = appointment.get("slot")
+        if slot in slot_counts:
+            slot_counts[slot] += 1
 
+    # Filter out fully booked slots (more than or equal to 10 appointments)
+    available_slots = [slot for slot, count in slot_counts.items() if count < 10]
+
+    return available_slots
 
 
 
@@ -164,10 +175,10 @@ def home_page():
         st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
 def booking_page():
+    render_sidebar()
     st.title("Book an Appointment")
     st.markdown("Fill in the details below to book an appointment.")
 
-    today = datetime.now().strftime("%Y-%m-%d")
     date = st.date_input("Select Appointment Date", min_value=datetime.now().date())
 
     # Check if the selected date is a Sunday
@@ -175,11 +186,13 @@ def booking_page():
         st.error("Appointments cannot be booked on Sundays. Please select another day.")
         return
 
-    available_slots = get_available_slots(date)  # Assuming this function returns available time slots for the selected date
+    # Fetch available slots
+    available_slots = get_available_slots(date)
+
     if available_slots:
         slot = st.selectbox("Select Appointment Time", available_slots)
     else:
-        st.write("No slots available for the selected date.")
+        st.warning("No slots are available for the selected date. Please choose another day.")
         return
 
     # Parent details
@@ -198,10 +211,8 @@ def booking_page():
         child_details.append({"name": child_name, "age": child_age, "disease": child_disease})
 
     if st.button("Book Appointment"):
-        # Generate token based on existing appointments for the selected date
-        token = len(db.collection(today).get()) + 1
-        save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_children, child_details, slot, token)
-        st.success(f"Appointment booked successfully! Your token number is {token}.")
+        save_appointment(date, parent_name, phone, address, num_children, child_details, slot)
+        st.success(f"Appointment booked successfully for {slot}.")
 
 
 
