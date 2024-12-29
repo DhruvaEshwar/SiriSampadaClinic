@@ -72,79 +72,74 @@ def get_appointments_on_date(start_timestamp, end_timestamp):
 def home_page():
     render_sidebar()
     # Add home page content here
-    def home_page():
-        render_sidebar()
+    if st.session_state.language == "en":
+        st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: setattr(st.session_state, "language", "kn"))
+    else:
+        st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: setattr(st.session_state, "language", "en"))
 
-        # Translate button
-        if st.session_state.language == "en":
-            st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: setattr(st.session_state, "language", "kn"))
-        else:
-            st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: setattr(st.session_state, "language", "en"))
+    if st.session_state.language == "en":
+        st.title("Welcome to Siri Sampada Child Care Clinic")
+        st.header("Siri Sampada Child Care Clinic")
+        st.write("**Phone no. :** 097428 52267")
+        st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
+        st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
+        st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            st.write("""
+            **Dr. Keerthi B. J.**  
+            - M.D. (Pediatrics), Fellow in Neonatology  
+            - Neonatologist & Pediatrician  
+            - Associate Professor in Pediatrics, Mandya District Hospital  
+            """)
+        with col2:
+            st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
+        st.subheader("Location")
+        st.markdown("""
+            <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
+                <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
+                    View on Google Maps
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
+        st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
+    else:
+        st.title("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್‌ಗೆ ಸ್ವಾಗತ")
+        st.header("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್")
+        st.write("**ಫೋನ್ ಸಂಖ್ಯೆ :** 097428 52267")
+        st.image("clinic_image_1.jpg", caption="ಕ್ಲಿನಿಕ್ ಒಳಗಿನ ಚಿತ್ರ", use_container_width=True)
+        st.image("clinic_image_2.jpg", caption="ಕ್ಲಿನಿಕ್ ಬಾಹ್ಯ ಚಿತ್ರ", use_container_width=True)
+        st.subheader("ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ. ಬಗ್ಗೆ ~")
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            st.write("""
+            **ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.**  
+            - ಎಂ.ಡಿ. (ಪಿಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೇಟೋಲಾಜಿ ಫೆಲೋ  
+            - ನಿಯೋನೇಟೋಲಜಿಸ್ಟ್ ಮತ್ತು ಪೀಡಿಯಾಟ್ರಿಷಿಯನ್  
+            - ಮಾಣ್ಡ್ಯಾ ಜಿಲ್ಲೆ ಆಸ್ಪತ್ರೆಯ ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್ ಅಸೋಸಿಯೇಟ್ ಪ್ರೊಫೆಸರ್  
+            """)
+        with col2:
+            st.image("doctor_photo.jpg", caption="ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.", use_container_width=True)
+        st.subheader("ಸ್ಥಳ")
+        st.markdown("""
+            <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
+                <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
+                    ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ನೋಡಿ
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
+        st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
-        if st.session_state.language == "en":
-            st.title("Welcome to Siri Sampada Child Care Clinic")
-            st.header("Siri Sampada Child Care Clinic")
-            st.write("**Phone no. :** 097428 52267")
-            st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
-            st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
-            st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
-            col1, col2 = st.columns([3, 2])
-            with col1:
-                st.write("""
-                **Dr. Keerthi B. J.**  
-                - M.D. (Pediatrics), Fellow in Neonatology  
-                - Neonatologist & Pediatrician  
-                - Associate Professor in Pediatrics, Mandya District Hospital  
-                """)
-            with col2:
-                st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
-            st.subheader("Location")
-            st.markdown("""
-                <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
-                    <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
-                        View on Google Maps
-                    </button>
-                </a>
-            """, unsafe_allow_html=True)
-            st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
-        else:
-            st.title("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್‌ಗೆ ಸ್ವಾಗತ")
-            st.header("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್")
-            st.write("**ಫೋನ್ ಸಂಖ್ಯೆ :** 097428 52267")
-            st.image("clinic_image_1.jpg", caption="ಕ್ಲಿನಿಕ್ ಒಳಗಿನ ಚಿತ್ರ", use_container_width=True)
-            st.image("clinic_image_2.jpg", caption="ಕ್ಲಿನಿಕ್ ಬಾಹ್ಯ ಚಿತ್ರ", use_container_width=True)
-            st.subheader("ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ. ಬಗ್ಗೆ ~")
-            col1, col2 = st.columns([3, 2])
-            with col1:
-                st.write("""
-                **ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.**  
-                - ಎಂ.ಡಿ. (ಪಿಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೇಟೋಲಾಜಿ ಫೆಲೋ  
-                - ನಿಯೋನೇಟೋಲಜಿಸ್ಟ್ ಮತ್ತು ಪೀಡಿಯಾಟ್ರಿಷಿಯನ್  
-                - ಮಾಣ್ಡ್ಯಾ ಜಿಲ್ಲೆ ಆಸ್ಪತ್ರೆಯ ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್ ಅಸೋಸಿಯೇಟ್ ಪ್ರೊಫೆಸರ್  
-                """)
-            with col2:
-                st.image("doctor_photo.jpg", caption="ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.", use_container_width=True)
-            st.subheader("ಸ್ಥಳ")
-            st.markdown("""
-                <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
-                    <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
-                        ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ನೋಡಿ
-                    </button>
-                </a>
-            """, unsafe_allow_html=True)
-            st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
+# Remaining pages omitted for brevity...
+
 
 
 def booking_page():
     render_sidebar()
-    # Add booking page content here
-    def booking_page():
-        render_sidebar()
-
-        if st.session_state.language == "en":
+    if st.session_state.language == "en":
             st.title("Book Appointment")
             st.header("Fill in the details below to book an appointment.")
-        else:
+    else:
             st.title("ನೇಮಕಾತಿ ಬುಕ್ ಮಾಡಿ")
             st.header("ನೀವು ನಿಗದಿಗೆ ಇತರೆ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ.")
 
