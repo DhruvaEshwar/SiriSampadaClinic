@@ -213,6 +213,14 @@ def booking_page():
     if st.button("Book Appointment", key=f"book_button_{date}"):
         save_appointment(date, parent_name, phone, address, num_children, child_details, slot)
         st.success(f"Appointment booked successfully for {slot}.")
+    if st.button("Book Appointment", key=f"book_button_{date}"):
+        # Check if all required fields are filled
+        if not parent_name or not phone or not address or not child_details:
+            st.error("Please fill in all the required fields!")
+        else:
+            # If all fields are filled, proceed with saving the appointment
+            save_appointment(date, parent_name, phone, address, num_children, child_details, slot)
+            st.success(f"Appointment booked successfully for {slot}.")
 
 
 
