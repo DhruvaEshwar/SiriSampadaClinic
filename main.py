@@ -129,71 +129,81 @@ def home_page():
         """, unsafe_allow_html=True)
         st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
-def prescription_page():
-    render_sidebar()
+    import streamlit as st
+    from datetime import datetime
 
-    # Password Authentication
-    password = st.text_input("Enter Password to Access Prescription Page", type="password")
-    correct_password = "ssclinic"  # Updated password
-    if password != correct_password:
-        st.warning("Incorrect Password!")
-        return
+    def prescription_page():
+        render_sidebar()
 
-    # Select child with an appointment on that day
-    date = st.date_input("Select Appointment Date")
-    appointments = get_appointments_on_date(date)  # Fetch appointments for the selected date
-    child_options = [
-        {
-            "label": f"{app['parent_name']} - {child['name']}",
-            "name": child["name"],
-            "age": child["age"],
-        }
-        for app in appointments for child in app["child_details"]
-    ]
+        # Password Authentication
+        password = st.text_input("Enter Password to Access Prescription Page", type="password")
+        correct_password = "ssclinic"  # Updated password
+        if password != correct_password:
+            st.warning("Incorrect Password!")
+            return
 
-    if child_options:
-        selected_child = st.selectbox(
-            "Select Child for Prescription",
-            [child["label"] for child in child_options]
-        )
+        # Select child with an appointment on that day
+        date = st.date_input("Select Appointment Date")
+        appointments = get_appointments_on_date(date)  # Fetch appointments for the selected date
+        child_options = [
+            {
+                "label": f"{app['parent_name']} - {child['name']}",
+                "name": child["name"],
+                "age": child["age"],
+            }
+            for app in appointments for child in app["child_details"]
+        ]
 
-        # Fetch selected child details
-        child_info = next(child for child in child_options if child["label"] == selected_child)
-        st.markdown(f"### Child Name: {child_info['name']} | Age: {child_info['age']} years")
-        st.markdown(f"**Appointment Date: {date} | Time: {datetime.now().strftime('%I:%M %p')}**")
+        if child_options:
+            selected_child = st.selectbox(
+                "Select Child for Prescription",
+                [child["label"] for child in child_options]
+            )
 
-        # Prescription Form
-        disease = st.text_area("Enter Disease")
+            # Fetch selected child details
+            child_info = next(child for child in child_options if child["label"] == selected_child)
+            st.markdown(f"### Child Name: {child_info['name']} | Age: {child_info['age']} years")
+            st.markdown(f"**Appointment Date: {date} | Time: {datetime.now().strftime('%I:%M %p')}**")
 
-        # Medicine Details
-        if "medicine_data" not in st.session_state:
-            st.session_state["medicine_data"] = []
+            # Prescription Form
+            disease = st.text_area("Enter Disease")
 
-        medicine_name = st.text_input("Medicine Name")
-        dosage = st.text_input("Dosage")
-        duration = st.text_input("Duration")
+            # Initialize or continue the medicine data list in session state
+            if "medicine_data" not in st.session_state:
+                st.session_state["medicine_data"] = []
 
-        if st.button("Add Medicine"):
-            if medicine_name and dosage and duration:
-                st.session_state["medicine_data"].append({
-                    "name": medicine_name,
-                    "dosage": dosage,
-                    "duration": duration,
-                })
-                st.success(f"Added {medicine_name}")
-            else:
-                st.error("Please fill in all the details")
+            # Medicine Input Fields
+            with st.form(key="medicine_form", clear_on_submit=True):
+                medicine_name = st.text_input("Medicine Name")
+                dosage = st.text_input("Dosage")
+                duration = st.text_input("Duration")
+                timing = st.selectbox("Timing", ["Before Food", "After Food"])
 
-        # Display added medicines
-        if st.session_state["medicine_data"]:
-            st.write("Added Medicines:")
-            for med in st.session_state["medicine_data"]:
-                st.write(f"{med['name']} - {med['dosage']} - {med['duration']}")
+                submit_button = st.form_submit_button(label="Add Medicine")
 
-        # Save prescription
-        if st.button("Save Prescription"):
-            st.success(f"Prescription Saved for {child_info['name']}")
-            st.session_state["medicine_data"] = []  # Clear the medicine data after saving
+                if submit_button:
+                    if medicine_name and dosage and duration:
+                        st.session_state["medicine_data"].append({
+                            "name": medicine_name,
+                            "dosage": dosage,
+                            "duration": duration,
+                            "timing": timing
+                        })
+                        st.success(f"Added {medicine_name}")
+                    else:
+                        st.error("Please fill in all the details")
+
+            # Display added medicines
+            if st.session_state["medicine_data"]:
+                st.write("Added Medicines:")
+                for idx, med in enumerate(st.session_state["medicine_data"], 1):
+                    st.write(f"{idx}. {med['name']} - {med['dosage']} - {med['duration']} - {med['timing']}")
+
+            # Save prescription
+            if st.button("Save Prescription"):
+                st.success(f"Prescription Saved for {child_info['name']}")
+                # Optionally save the prescription to Firestore or another database here
+                st.session_state["medicine_data"] = []  # Clear the medicine data after saving
 
 def booking_page():
     render_sidebar()
