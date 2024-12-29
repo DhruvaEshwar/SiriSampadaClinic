@@ -25,11 +25,12 @@ except ValueError:
 
 db = firestore.client()
 
-# Initialize session state
+# Initialize session state variables if they don't exist
 if "language" not in st.session_state:
-    st.session_state.language = "en"
+    st.session_state.language = "en"  # Set default language
 if "page" not in st.session_state:
-    st.session_state.page = "Home"
+    st.session_state.page = "Home"  # Set default page
+
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
