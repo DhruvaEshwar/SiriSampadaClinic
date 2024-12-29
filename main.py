@@ -46,27 +46,48 @@ def render_sidebar():
         st.session_state.language = st.radio("Language", ["en", "kn"], index=["en", "kn"].index(st.session_state.language))
 
 # Firebase Helpers
-def save_appointment(date, parent_name, phone, address, num_children, child_details, slot, token):
-    db.collection("appointments").document(token).set({
-        "date": date,
-        "parent_name": parent_name,
-        "phone": phone,
-        "address": address,
-        "num_children": num_children,
-        "child_details": child_details,
-        "slot": slot,
-        "token": token,
-        "created_at": datetime.now()
-    })
+    # Firebase Helpers
+def save_appointment(date, parent_name, phone, address, num_children, child_details, slot):
+      # Use date as the document name (YYYY-MM-DD format)
+      date_str = date.strftime('%Y-%m-%d')
+      appointment_ref = db.collection("appointments").document(date_str)
 
-def get_appointments_on_date(start_timestamp, end_timestamp):
-    appointments = [
-        app.to_dict() for app in db.collection("appointments")
-        .where("date", ">=", start_timestamp)
-        .where("date", "<=", end_timestamp)
-        .stream()
-    ]
-    return appointments
+      # Get existing appointments for the date (if any)
+      existing_appointments = appointment_ref.get()
+      if existing_appointments.exists:
+          appointments = existing_appointments.to_dict()['appointments']
+      else:
+          appointments = []
+
+      # Append new appointment
+      appointment_data = {
+          "parent_name": parent_name,
+          "phone": phone,
+          "address": address,
+          "num_children": num_children,
+          "child_details": child_details,
+          "slot": slot,
+          "created_at": datetime.now()
+      }
+      appointments.append(appointment_data)
+
+      # Save the updated appointments list under the date
+      appointment_ref.set({
+          "appointments": appointments
+      })
+
+def get_appointments_on_date(date):
+      date_str = date.strftime('%Y-%m-%d')
+      appointment_ref = db.collection("appointments").document(date_str)
+
+      # Fetch appointments for the selected date
+      appointment_data = appointment_ref.get()
+      if appointment_data.exists:
+          return appointment_data.to_dict()['appointments']
+      else:
+          return []
+
+
 
 # Pages
 def home_page():
@@ -130,11 +151,10 @@ def home_page():
         """, unsafe_allow_html=True)
         st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
-# Remaining pages omitted for brevity...
-
 def booking_page():
     render_sidebar()
-    if st.session_state.language == "en":
+
+    if st.session_state.language == "en": 
         st.title("Book Appointment")
         st.header("Fill in the details below to book an appointment.")
     else:
@@ -144,54 +164,48 @@ def booking_page():
     # Appointment Date Selection
     appointment_date = st.date_input("Select Appointment Date" if st.session_state.language == "en" else "ನಿಗದಿ ದಿನಾಂಕ ಆಯ್ಕೆಮಾಡಿ")
 
-    # Get available slots based on the selected date
-    available_slots = get_available_slots(appointment_date)
-
-    # If there are no available slots, show a message
-    if not available_slots:
+    # Check if the selected date is a Sunday
+    if appointment_date.weekday() == 6:  # Sunday is 6 in the weekday() method
         if st.session_state.language == "en":
-            st.warning("No slots available for the selected date.")
+            st.error("Appointments cannot be booked on Sundays. Please select another day.")
         else:
-            st.warning("ಆಯ್ಕೆಮಾಡಿದ ದಿನಾಂಕಕ್ಕೆ ಯಾವುದೇ ಸಮಯ ಸ್ಲಾಟುಗಳು ಲಭ್ಯವಿಲ್ಲ.")
-    else:
-        # Select an available slot
-        slot = st.selectbox("Select Time Slot" if st.session_state.language == "en" else "ಸಮಯ ಸ್ಲಾಟು ಆಯ್ಕೆಮಾಡಿ", available_slots)
+            st.error("ಭಾನುವಾರಗಳಲ್ಲಿ ನಿಗದಿಯನ್ನು ಬುಕ್ ಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಮತ್ತೊಂದು ದಿನ ಆಯ್ಕೆಮಾಡಿ.")
+        return
 
-        # Enter personal details
-        parent_name = st.text_input("Parent's Name" if st.session_state.language == "en" else "ಹೆತ್ತವರ ಹೆಸರು")
-        phone = st.text_input("Phone Number" if st.session_state.language == "en" else "ಫೋನ್ ಸಂಖ್ಯೆ")
-        address = st.text_area("Address" if st.session_state.language == "en" else "ವಿಳಾಸ")
+    # Enter personal details
+    parent_name = st.text_input("Parent's Name" if st.session_state.language == "en" else "ಹೆತ್ತವರ ಹೆಸರು")
+    phone = st.text_input("Phone Number" if st.session_state.language == "en" else "ಫೋನ್ ಸಂಖ್ಯೆ")
+    address = st.text_area("Address" if st.session_state.language == "en" else "ವಿಳಾಸ")
 
-        # Child details
-        num_children = st.number_input("Number of Children" if st.session_state.language == "en" else "ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=10)
-        child_details = []
-        for i in range(num_children):
-            with st.expander(f"Child {i + 1} Details" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಿವರಗಳು"):
-                child_name = st.text_input(f"Name of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ಹೆಸರು")
-                child_age = st.number_input(f"Age of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಯಸ್ಸು", min_value=0, max_value=18)
-                child_disease = st.text_area(f"Disease (if any) for Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ರೋಗ (ಇಲ್ಲಿ ಇವಿದ್ದರೆ)")
-                if child_name:
-                    child_details.append({"name": child_name, "age": child_age, "disease": child_disease})
+    # Child details
+    num_children = st.number_input("Number of Children" if st.session_state.language == "en" else "ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=10)
+    child_details = []
+    for i in range(num_children):
+        with st.expander(f"Child {i + 1} Details" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಿವರಗಳು"):
+            child_name = st.text_input(f"Name of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ಹೆಸರು")
+            child_age = st.number_input(f"Age of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಯಸ್ಸು", min_value=0, max_value=18)
+            child_disease = st.text_area(f"Disease (if any) for Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ರೋಗ (ಇಲ್ಲಿ ಇವಿದ್ದರೆ)")
+            if child_name:
+                child_details.append({"name": child_name, "age": child_age, "disease": child_disease})
 
-        # Generate unique token for the appointment
-        token = f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    # Generate unique token for the appointment
+    token = f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-        # Submit the booking
-        if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", key="book_appointment_button"):
+    # Submit the booking
+    if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", key="book_appointment_button"):
 
-            if parent_name and phone and address and num_children > 0 and child_details:
-                # Save appointment details in Firestore
-                save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot, token)
-                if st.session_state.language == "en":
-                    st.success(f"Appointment booked successfully! Token: {token}")
-                else:
-                    st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ಟೋಕನ್: {token}")
+        if parent_name and phone and address and num_children > 0 and child_details:
+            # Save appointment details in Firestore
+            save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot)
+            if st.session_state.language == "en":
+                st.success(f"Appointment booked successfully! Token: {token}")
             else:
-                if st.session_state.language == "en":
-                    st.error("Please fill all the details before submitting.")
-                else:
-                    st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
-
+                st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ಟೋಕನ್: {token}")
+        else:
+            if st.session_state.language == "en":
+                st.error("Please fill all the details before submitting.")
+            else:
+                st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
 
 
 
@@ -209,16 +223,8 @@ def prescription_page():
     date = st.date_input("Select Appointment Date")
 
     if date:
-        # Convert the selected date to Firestore Timestamp range (start and end of the day)
-        start_of_day = datetime(date.year, date.month, date.day, 0, 0, 0)
-        end_of_day = datetime(date.year, date.month, date.day, 23, 59, 59, 999999)
-
-        # Convert to Firestore Timestamps
-        start_timestamp = firestore.Timestamp.from_datetime(start_of_day)
-        end_timestamp = firestore.Timestamp.from_datetime(end_of_day)
-
         # Fetch appointments for the selected date
-        appointments = get_appointments_on_date(start_timestamp, end_timestamp)
+        appointments = get_appointments_on_date(date)
 
         # Prepare options for selecting a child from the fetched appointments
         child_options = [
@@ -282,7 +288,8 @@ def prescription_page():
                 st.session_state["medicine_data"] = []  # Clear the medicine data after saving
 
         else:
-            st.write("No appointments found for this date.")
+            st.warning("No appointments available for this date.")
+
 
 # Main page routing
 if st.session_state.page == "Home":
