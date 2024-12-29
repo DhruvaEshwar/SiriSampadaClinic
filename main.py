@@ -25,9 +25,46 @@ except ValueError:
 
 db = firestore.client()
 
-# Initialize session state for navigation
+# Sample translations dictionary
+translations = {
+    "home_title": {"en": "Welcome to Siri Sampada Child Care Clinic"},
+    "appointment_title": {"en": "Book Appointment"},
+    "sunday_warning": {"en": "Appointments cannot be booked for Sundays."},
+    "time_slot": {"en": "Select a Time Slot"},
+    "parent_name": {"en": "Parent's Name"},
+    "phone_number": {"en": "Phone Number"},
+    "address": {"en": "Address"},
+    "num_patients": {"en": "Number of Patients"},
+    "book_button": {"en": "Book Appointment"},
+    "appointment_saved": {"en": "Appointment successfully booked with Token:"},
+    "clinic_info": {"en": "Siri Sampada Child Care Clinic"}
+}
+
+# Initialize session state variables
+if "language" not in st.session_state:
+    st.session_state.language = "en"  # Default to English
+
 if "page" not in st.session_state:
     st.session_state.page = "Home"
+
+# Helper function to get available slots (mocked for demo)
+def get_available_slots(date):
+    return ["10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"]  # Sample slots
+
+# Helper function to save appointments (mock implementation)
+def save_appointment(date, parent_name, phone, address, num_patients, patient_details, slot, token):
+    st.write(f"Saving appointment: {date}, {parent_name}, {phone}, {address}, {slot}, {token}")
+    # Save to Firebase (mocked for simplicity)
+    db.collection("appointments").add({
+        "date": date,
+        "parent_name": parent_name,
+        "phone": phone,
+        "address": address,
+        "num_patients": num_patients,
+        "patient_details": patient_details,
+        "slot": slot,
+        "token": token
+    })
 
 # Sidebar navigation
 def navigate(page_name):
@@ -61,23 +98,7 @@ def home_page():
         - Associate Professor in Pediatrics, Mandya District Hospital  
         """)
     with col2:
-        st.markdown(
-            """
-            <style>
-            .rounded-img {
-                border-radius: 15px;
-                width: 100%;
-                max-width: 200px;
-                margin: auto;
-            }
-            </style>
-            """, unsafe_allow_html=True
-        )
-        st.markdown(
-            f"""
-            <img src="doctor_photo.jpg" alt="Doctor" class="rounded-img">
-            """, unsafe_allow_html=True
-        )
+        st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
 
     # Location and Google Maps button
     st.subheader("Location")
@@ -103,26 +124,22 @@ def appointment_page():
     available_dates = [today + timedelta(days=i) for i in range(7)]
     available_dates = [date for date in available_dates if date.weekday() != 6]  # Remove Sundays
 
-    # Select a date, but only allow available dates (i.e., excluding Sundays)
     date = st.date_input("Select Appointment Date", min_value=available_dates[0], max_value=available_dates[-1])
-
-    # Check if the selected date is a Sunday
     if date.weekday() == 6:  # 6 is Sunday
         st.warning(translations["sunday_warning"][st.session_state.language])
         return
 
     available_slots = get_available_slots(date)
-
     if not available_slots:
         st.warning("No available slots for the selected date.")
         return
 
-    slot = st.selectbox(translations["time_slot"][st.session_state.language], available_slots)
-    parent_name = st.text_input(translations["parent_name"][st.session_state.language])
-    phone = st.text_input(translations["phone_number"][st.session_state.language])
-    address = st.text_area(translations["address"][st.session_state.language])
+    slot = st.selectbox("Select a Time Slot", available_slots)
+    parent_name = st.text_input("Parent's Name")
+    phone = st.text_input("Phone Number")
+    address = st.text_area("Address")
 
-    num_patients = st.number_input(translations["num_patients"][st.session_state.language], min_value=1, max_value=5)
+    num_patients = st.number_input("Number of Patients", min_value=1, max_value=5)
 
     patient_details = []
     for i in range(num_patients):
@@ -131,28 +148,19 @@ def appointment_page():
         patient_age = st.text_input(f"Patient {i + 1} Age")
         patient_details.append({"name": patient_name, "age": patient_age})
 
-    if st.button(translations["book_button"][st.session_state.language]):
+    if st.button("Book Appointment"):
         if parent_name and phone and address and all(pd["name"] and pd["age"] for pd in patient_details):
             token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
             save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
-            st.success(f"{translations['appointment_saved'][st.session_state.language]} {token}")
+            st.success(f"Appointment successfully booked with Token: {token}")
         else:
             st.error("Please fill in all details.")
 
 def prescription_page():
-    st.title("Prescription Entry")  # No translation here
+    st.title("Prescription Entry")
+    st.write("This page is under construction.")
 
-    children = get_children_for_today()
-    if not children:
-        st.write("No children have booked appointments for today.")
-    else:
-        selected_child = st.selectbox("Select a child", [child["name"] for child in children])
-        prescription = st.text_area("Enter prescription for the child")
-        if st.button("Save Prescription"):
-            save_prescription(selected_child, prescription)
-            st.success("Prescription saved successfully!")
-
-# Main Function
+# Main function
 def main():
     if st.session_state.page == "Home":
         home_page()
