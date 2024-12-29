@@ -132,67 +132,68 @@ def home_page():
 
 # Remaining pages omitted for brevity...
 
-
-
 def booking_page():
     render_sidebar()
     if st.session_state.language == "en":
-            st.title("Book Appointment")
-            st.header("Fill in the details below to book an appointment.")
+        st.title("Book Appointment")
+        st.header("Fill in the details below to book an appointment.")
     else:
-            st.title("ನೇಮಕಾತಿ ಬುಕ್ ಮಾಡಿ")
-            st.header("ನೀವು ನಿಗದಿಗೆ ಇತರೆ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ.")
+        st.title("ನೇಮಕಾತಿ ಬುಕ್ ಮಾಡಿ")
+        st.header("ನೀವು ನಿಗದಿಗೆ ಇತರೆ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ.")
 
-        # Appointment Date Selection
-        appointment_date = st.date_input("Select Appointment Date" if st.session_state.language == "en" else "ನಿಗದಿ ದಿನಾಂಕ ಆಯ್ಕೆಮಾಡಿ")
+    # Appointment Date Selection
+    appointment_date = st.date_input("Select Appointment Date" if st.session_state.language == "en" else "ನಿಗದಿ ದಿನಾಂಕ ಆಯ್ಕೆಮಾಡಿ")
 
-        # Get available slots based on the selected date
-        available_slots = get_available_slots(appointment_date)
+    # Get available slots based on the selected date
+    available_slots = get_available_slots(appointment_date)
 
-        # If there are no available slots, show a message
-        if not available_slots:
-            if st.session_state.language == "en":
-                st.warning("No slots available for the selected date.")
-            else:
-                st.warning("ಆಯ್ಕೆಮಾಡಿದ ದಿನಾಂಕಕ್ಕೆ ಯಾವುದೇ ಸಮಯ ಸ್ಲಾಟುಗಳು ಲಭ್ಯವಿಲ್ಲ.")
+    # If there are no available slots, show a message
+    if not available_slots:
+        if st.session_state.language == "en":
+            st.warning("No slots available for the selected date.")
         else:
-            # Select an available slot
-            slot = st.selectbox("Select Time Slot" if st.session_state.language == "en" else "ಸಮಯ ಸ್ಲಾಟು ಆಯ್ಕೆಮಾಡಿ", available_slots)
+            st.warning("ಆಯ್ಕೆಮಾಡಿದ ದಿನಾಂಕಕ್ಕೆ ಯಾವುದೇ ಸಮಯ ಸ್ಲಾಟುಗಳು ಲಭ್ಯವಿಲ್ಲ.")
+    else:
+        # Select an available slot
+        slot = st.selectbox("Select Time Slot" if st.session_state.language == "en" else "ಸಮಯ ಸ್ಲಾಟು ಆಯ್ಕೆಮಾಡಿ", available_slots)
 
-            # Enter personal details
-            parent_name = st.text_input("Parent's Name" if st.session_state.language == "en" else "ಹೆತ್ತವರ ಹೆಸರು")
-            phone = st.text_input("Phone Number" if st.session_state.language == "en" else "ಫೋನ್ ಸಂಖ್ಯೆ")
-            address = st.text_area("Address" if st.session_state.language == "en" else "ವಿಳಾಸ")
+        # Enter personal details
+        parent_name = st.text_input("Parent's Name" if st.session_state.language == "en" else "ಹೆತ್ತವರ ಹೆಸರು")
+        phone = st.text_input("Phone Number" if st.session_state.language == "en" else "ಫೋನ್ ಸಂಖ್ಯೆ")
+        address = st.text_area("Address" if st.session_state.language == "en" else "ವಿಳಾಸ")
 
-            # Child details
-            num_children = st.number_input("Number of Children" if st.session_state.language == "en" else "ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=10)
-            child_details = []
-            for i in range(num_children):
-                with st.expander(f"Child {i + 1} Details" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಿವರಗಳು"):
-                    child_name = st.text_input(f"Name of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ಹೆಸರು")
-                    child_age = st.number_input(f"Age of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಯಸ್ಸು", min_value=0, max_value=18)
-                    child_disease = st.text_area(f"Disease (if any) for Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ರೋಗ (ಇಲ್ಲಿ ಇವಿದ್ದರೆ)")
-                    if child_name:
-                        child_details.append({"name": child_name, "age": child_age, "disease": child_disease})
+        # Child details
+        num_children = st.number_input("Number of Children" if st.session_state.language == "en" else "ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=10)
+        child_details = []
+        for i in range(num_children):
+            with st.expander(f"Child {i + 1} Details" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಿವರಗಳು"):
+                child_name = st.text_input(f"Name of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ಹೆಸರು")
+                child_age = st.number_input(f"Age of Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ವಯಸ್ಸು", min_value=0, max_value=18)
+                child_disease = st.text_area(f"Disease (if any) for Child {i + 1}" if st.session_state.language == "en" else f"ಮಕ್ಕಳು {i + 1} ರೋಗ (ಇಲ್ಲಿ ಇವಿದ್ದರೆ)")
+                if child_name:
+                    child_details.append({"name": child_name, "age": child_age, "disease": child_disease})
 
-            # Generate unique token for the appointment
-            token = f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        # Generate unique token for the appointment
+        token = f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-            # Submit the booking
-            if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", key="book_appointment_button"):
+        # Submit the booking
+        if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", key="book_appointment_button"):
 
-                if parent_name and phone and address and num_children > 0 and child_details:
-                    # Save appointment details in Firestore
-                    save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot, token)
-                    if st.session_state.language == "en":
-                        st.success(f"Appointment booked successfully! Token: {token}")
-                    else:
-                        st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ಟೋಕನ್: {token}")
+            if parent_name and phone and address and num_children > 0 and child_details:
+                # Save appointment details in Firestore
+                save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot, token)
+                if st.session_state.language == "en":
+                    st.success(f"Appointment booked successfully! Token: {token}")
                 else:
-                    if st.session_state.language == "en":
-                        st.error("Please fill all the details before submitting.")
-                    else:
-                        st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+                    st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ಟೋಕನ್: {token}")
+            else:
+                if st.session_state.language == "en":
+                    st.error("Please fill all the details before submitting.")
+                else:
+                    st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+
+
+
 
 def prescription_page():
     render_sidebar()
