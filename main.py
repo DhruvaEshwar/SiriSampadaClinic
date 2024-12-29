@@ -60,18 +60,19 @@ def save_appointment(date, parent_name, phone, address, num_children, child_deta
     })
 
 def get_appointments_on_date(date):
-    # Check if the date is a datetime object, then strip the time
-    if isinstance(date, datetime):
-        date = date.date()  # Convert datetime to just the date part (midnight time)
+        # Ensure date is a datetime object with time set to midnight
+        if isinstance(date, datetime):
+            date = date.replace(hour=0, minute=0, second=0, microsecond=0)  # Strip the time
 
-    # Now perform the query with the correct date format
-    appointments = [
-        app.to_dict() for app in db.collection("appointments")
-        .where("date", "==", date)  # Compare with just the date part
-        .stream()
-    ]
+        # Now perform the query with the datetime object
+        appointments = [
+            app.to_dict() for app in db.collection("appointments")
+            .where("date", "==", date)  # Compare with datetime object
+            .stream()
+        ]
 
-    return appointments
+        return appointments
+
 
 # Function to get available slots (add this definition)
 def get_available_slots(date):
