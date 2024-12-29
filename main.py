@@ -19,43 +19,35 @@ cred = credentials.Certificate({
 })
 
 try:
-    firebase_admin.get_app()  # Check if app is already initialized
+    firebase_admin.get_app()
 except ValueError:
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-# Initialize session state variables
+# Initialize session state
 if "language" not in st.session_state:
-    st.session_state.language = "en"  # Default to English
-
+    st.session_state.language = "en"
 if "page" not in st.session_state:
     st.session_state.page = "Home"
-
 if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = True  # Sidebar is open by default
+    st.session_state.sidebar_open = True
 
-# Toggle sidebar visibility
+# Sidebar
 def toggle_sidebar():
     st.session_state.sidebar_open = not st.session_state.sidebar_open
 
-# Sidebar with toggle arrow
 def render_sidebar():
-    if st.session_state.sidebar_open:
-        with st.sidebar:
-            st.button("➤ Close Sidebar / ಪಟ್ಟಿ बंद ಮಾಡಿ", on_click=toggle_sidebar)
-            st.title("Navigation / ಮಾರ್ಗದರ್ಶನ")
-            st.button("Home / ಮುಖ್ಯಪುಟ", on_click=lambda: st.session_state.update({"page": "Home"}))
-            st.button("Book Appointment / ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", on_click=lambda: st.session_state.update({"page": "Book Appointment"}))
-            st.button("Prescription Entry / ಔಷಧಿ ಪ್ರವೇಶಿಸಿ", on_click=lambda: st.session_state.update({"page": "Prescription Entry"}))
-            st.radio("Select Language / ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ", ["en", "kn"], index=["en", "kn"].index(st.session_state.language), 
-                     on_change=lambda: st.session_state.update({"language": st.sidebar.radio("Select Language / ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ", ["en", "kn"])}))
-    else:
-        st.sidebar.button("➤ Open Sidebar / ಪಟ್ಟಿ ತೆರೆಯಿರಿ", on_click=toggle_sidebar)
+    with st.sidebar:
+        st.button("➤ Toggle Sidebar", on_click=toggle_sidebar)
+        st.button("Home", on_click=lambda: setattr(st.session_state, "page", "Home"))
+        st.button("Book Appointment", on_click=lambda: setattr(st.session_state, "page", "Book Appointment"))
+        st.button("Prescription Entry", on_click=lambda: setattr(st.session_state, "page", "Prescription Entry"))
+        st.session_state.language = st.radio("Language", ["en", "kn"], index=["en", "kn"].index(st.session_state.language))
 
-# Firebase helper functions
+# Firebase Helpers
 def save_appointment(date, parent_name, phone, address, num_children, child_details, slot, token):
-    appointment_data = {
+    db.collection("appointments").document(token).set({
         "date": date,
         "parent_name": parent_name,
         "phone": phone,
@@ -65,83 +57,75 @@ def save_appointment(date, parent_name, phone, address, num_children, child_deta
         "slot": slot,
         "token": token,
         "created_at": datetime.now()
-    }
-    db.collection("appointments").document(token).set(appointment_data)
-
-def get_available_slots(date):
-    return ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "02:00 PM - 03:00 PM", "03:00 PM - 04:00 PM"]
+    })
 
 def get_appointments_on_date(date):
-    appointments_ref = db.collection("appointments").where("date", "==", date)
-    appointments = appointments_ref.stream()
-    return [app.to_dict() for app in appointments]
+    return [app.to_dict() for app in db.collection("appointments").where("date", "==", date).stream()]
 
-# Home Page
-def home_page():
-    render_sidebar()
+# Pages
+    def home_page():
+        render_sidebar()
 
-    # Translate buttons at the top
-    if st.session_state.language == "en":
-        st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "kn"}))
-    else:
-        st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "en"}))
+        # Translate buttons at the top
+        if st.session_state.language == "en":
+            st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "kn"}))
+        else:
+            st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "en"}))
 
-    if st.session_state.language == "en":
-        st.title("Welcome to Siri Sampada Child Care Clinic")
-        st.header("Siri Sampada Child Care Clinic")
-        st.write("**Phone no. :** 097428 52267")
-        st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
-        st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
-        st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
-        col1, col2 = st.columns([3, 2])
-        with col1:
-            st.write("""
-            **Dr. Keerthi B. J.**  
-            - M.D. (Pediatrics), Fellow in Neonatology  
-            - Neonatologist & Pediatrician  
-            - Associate Professor in Pediatrics, Mandya District Hospital  
-            """)
-        with col2:
-            st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
-        st.subheader("Location")
-        st.markdown("""
-            <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
-                <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
-                    View on Google Maps
-                </button>
-            </a>
-        """, unsafe_allow_html=True)
-        st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
-    else:
-        st.title("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್‌ಗೆ ಸ್ವಾಗತ")
-        st.header("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್")
-        st.write("**ಫೋನ್ ಸಂಖ್ಯೆ :** 097428 52267")
-        st.image("clinic_image_1.jpg", caption="ಕ್ಲಿನಿಕ್ ಒಳಗಿನ ಚಿತ್ರ", use_container_width=True)
-        st.image("clinic_image_2.jpg", caption="ಕ್ಲಿನಿಕ್ ಬಾಹ್ಯ ಚಿತ್ರ", use_container_width=True)
-        st.subheader("ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ. ಬಗ್ಗೆ ~")
-        col1, col2 = st.columns([3, 2])
-        with col1:
-            st.write("""
-            **ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.**  
-            - ಎಂ.ಡಿ. (ಪಿಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೇಟೋಲಾಜಿ ಫೆಲೋ  
-            - ನಿಯೋನೇಟೋಲಜಿಸ್ಟ್ ಮತ್ತು ಪೀಡಿಯಾಟ್ರಿಷಿಯನ್  
-            - ಮಾಣ್ಡ್ಯಾ ಜಿಲ್ಲಾ ಆಸ್ಪತ್ರೆಯ ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್ ಅಸೋಸಿಯೇಟ್ ಪ್ರೊಫೆಸರ್  
-            """)
-        with col2:
-            st.image("doctor_photo.jpg", caption="ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.", use_container_width=True)
-        st.subheader("ಸ್ಥಳ")
-        st.markdown("""
-            <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
-                <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
-                    ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ನೋಡಿ
-                </button>
-            </a>
-        """, unsafe_allow_html=True)
-        st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
+        if st.session_state.language == "en":
+            st.title("Welcome to Siri Sampada Child Care Clinic")
+            st.header("Siri Sampada Child Care Clinic")
+            st.write("**Phone no. :** 097428 52267")
+            st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
+            st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
+            st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
+            col1, col2 = st.columns([3, 2])
+            with col1:
+                st.write("""
+                **Dr. Keerthi B. J.**  
+                - M.D. (Pediatrics), Fellow in Neonatology  
+                - Neonatologist & Pediatrician  
+                - Associate Professor in Pediatrics, Mandya District Hospital  
+                """)
+            with col2:
+                st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
+            st.subheader("Location")
+            st.markdown("""
+                <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
+                    <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
+                        View on Google Maps
+                    </button>
+                </a>
+            """, unsafe_allow_html=True)
+            st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
+        else:
+            st.title("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್‌ಗೆ ಸ್ವಾಗತ")
+            st.header("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್")
+            st.write("**ಫೋನ್ ಸಂಖ್ಯೆ :** 097428 52267")
+            st.image("clinic_image_1.jpg", caption="ಕ್ಲಿನಿಕ್ ಒಳಗಿನ ಚಿತ್ರ", use_container_width=True)
+            st.image("clinic_image_2.jpg", caption="ಕ್ಲಿನಿಕ್ ಬಾಹ್ಯ ಚಿತ್ರ", use_container_width=True)
+            st.subheader("ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ. ಬಗ್ಗೆ ~")
+            col1, col2 = st.columns([3, 2])
+            with col1:
+                st.write("""
+                **ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.**  
+                - ಎಂ.ಡಿ. (ಪಿಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೇಟೋಲಾಜಿ ಫೆಲೋ  
+                - ನಿಯೋನೇಟೋಲಜಿಸ್ಟ್ ಮತ್ತು ಪೀಡಿಯಾಟ್ರಿಷಿಯನ್  
+                - ಮಾಣ್ಡ್ಯಾ ಜಿಲ್ಲಾ ಆಸ್ಪತ್ರೆಯ ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್ ಅಸೋಸಿಯೇಟ್ ಪ್ರೊಫೆಸರ್  
+                """)
+            with col2:
+                st.image("doctor_photo.jpg", caption="ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.", use_container_width=True)
+            st.subheader("ಸ್ಥಳ")
+            st.markdown("""
+                <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
+                    <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
+                        ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ನೋಡಿ
+                    </button>
+                </a>
+            """, unsafe_allow_html=True)
+            st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
-
-# Prescription Page (NO TRANSLATION)
-    def prescription_page():
+def prescription_page():
         render_sidebar()
 
         # Password Authentication
@@ -214,78 +198,77 @@ def home_page():
             st.warning("No appointments found for the selected date")
 
 
-# Booking Page with Translation
-def booking_page():
-    render_sidebar()
+    def booking_page():
+        render_sidebar()
 
-    # Translate buttons at the top
-    if st.session_state.language == "en":
-        st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "kn"}))
-    else:
-        st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "en"}))
+        # Translate buttons at the top
+        if st.session_state.language == "en":
+            st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "kn"}))
+        else:
+            st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "en"}))
 
-    if st.session_state.language == "en":
-        st.title("Book Appointment")
-        st.markdown("Fill in the details below to book an appointment.")
-        today = datetime.now().date()
-        available_dates = [today + timedelta(days=i) for i in range(7) if (today + timedelta(days=i)).weekday() != 6]
-        date = st.date_input("Select a Date", min_value=available_dates[0], max_value=available_dates[-1])
-        if date.weekday() == 6:
-            st.warning("Appointments cannot be booked for Sundays.")
-            return
-        slot = st.selectbox("Select a Time Slot", get_available_slots(date))
-        parent_name = st.text_input("Parent's Name")
-        phone = st.text_input("Phone Number")
-        address = st.text_area("Address")
+        if st.session_state.language == "en":
+            st.title("Book Appointment")
+            st.markdown("Fill in the details below to book an appointment.")
+            today = datetime.now().date()
+            available_dates = [today + timedelta(days=i) for i in range(7) if (today + timedelta(days=i)).weekday() != 6]
+            date = st.date_input("Select a Date", min_value=available_dates[0], max_value=available_dates[-1])
+            if date.weekday() == 6:
+                st.warning("Appointments cannot be booked for Sundays.")
+                return
+            slot = st.selectbox("Select a Time Slot", get_available_slots(date))
+            parent_name = st.text_input("Parent's Name")
+            phone = st.text_input("Phone Number")
+            address = st.text_area("Address")
 
-        # Number of children with plus and minus controls
-        num_children = st.number_input("Number of Children", min_value=1, max_value=5)
+            # Number of children with plus and minus controls
+            num_children = st.number_input("Number of Children", min_value=1, max_value=5)
 
-        children = []
-        for i in range(num_children):
-            st.subheader(f"Child {i+1}")
-            child_name = st.text_input(f"Name of Child {i+1}")
-            child_age = st.number_input(f"Age of Child {i+1}", min_value=0, max_value=18)
-            children.append({"name": child_name, "age": child_age})
+            children = []
+            for i in range(num_children):
+                st.subheader(f"Child {i+1}")
+                child_name = st.text_input(f"Name of Child {i+1}")
+                child_age = st.number_input(f"Age of Child {i+1}", min_value=0, max_value=18)
+                children.append({"name": child_name, "age": child_age})
 
-        if st.button("Book Appointment"):
-            if parent_name and phone and address and all(child["name"] for child in children):
-                token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                save_appointment(date, parent_name, phone, address, num_children, children, slot, token)
-                st.success(f"Appointment successfully booked! Your token number is {token}.")
-            else:
-                st.error("Please fill in all the details.")
-    else:
-        st.title("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ")
-        st.markdown("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಲು ಕೆಳಗಿನ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
-        today = datetime.now().date()
-        available_dates = [today + timedelta(days=i) for i in range(7) if (today + timedelta(days=i)).weekday() != 6]
-        date = st.date_input("ದಿನಾಂಕವನ್ನು ಆಯ್ಕೆಮಾಡಿ", min_value=available_dates[0], max_value=available_dates[-1])
-        if date.weekday() == 6:
-            st.warning("ಆದಿತ್ಯವಾರಗಳಲ್ಲಿ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್‌ಗಳನ್ನು ಬುಕ್ ಮಾಡಲಾಗುವುದಿಲ್ಲ.")
-            return
-        slot = st.selectbox("ಸಮಯ ಸ್ಲಾಟ್ ಆಯ್ಕೆಮಾಡಿ", get_available_slots(date))
-        parent_name = st.text_input("ಪೋಷಕರ ಹೆಸರು")
-        phone = st.text_input("ದೂರವಾಣಿ ಸಂಖ್ಯೆ")
-        address = st.text_area("ವಿಳಾಸ")
+            if st.button("Book Appointment"):
+                if parent_name and phone and address and all(child["name"] for child in children):
+                    token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    save_appointment(date, parent_name, phone, address, num_children, children, slot, token)
+                    st.success(f"Appointment successfully booked! Your token number is {token}.")
+                else:
+                    st.error("Please fill in all the details.")
+        else:
+            st.title("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ")
+            st.markdown("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಲು ಕೆಳಗಿನ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+            today = datetime.now().date()
+            available_dates = [today + timedelta(days=i) for i in range(7) if (today + timedelta(days=i)).weekday() != 6]
+            date = st.date_input("ದಿನಾಂಕವನ್ನು ಆಯ್ಕೆಮಾಡಿ", min_value=available_dates[0], max_value=available_dates[-1])
+            if date.weekday() == 6:
+                st.warning("ಆದಿತ್ಯವಾರಗಳಲ್ಲಿ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್‌ಗಳನ್ನು ಬುಕ್ ಮಾಡಲಾಗುವುದಿಲ್ಲ.")
+                return
+            slot = st.selectbox("ಸಮಯ ಸ್ಲಾಟ್ ಆಯ್ಕೆಮಾಡಿ", get_available_slots(date))
+            parent_name = st.text_input("ಪೋಷಕರ ಹೆಸರು")
+            phone = st.text_input("ದೂರವಾಣಿ ಸಂಖ್ಯೆ")
+            address = st.text_area("ವಿಳಾಸ")
 
-        # Number of children with plus and minus controls
-        num_children = st.number_input("ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=5)
+            # Number of children with plus and minus controls
+            num_children = st.number_input("ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=5)
 
-        children = []
-        for i in range(num_children):
-            st.subheader(f"ಮಗು {i+1}")
-            child_name = st.text_input(f"ಮಗು {i+1} ಹೆಸರು")
-            child_age = st.number_input(f"ಮಗು {i+1} ವಯಸ್ಸು", min_value=0, max_value=18)
-            children.append({"name": child_name, "age": child_age})
+            children = []
+            for i in range(num_children):
+                st.subheader(f"ಮಗು {i+1}")
+                child_name = st.text_input(f"ಮಗು {i+1} ಹೆಸರು")
+                child_age = st.number_input(f"ಮಗು {i+1} ವಯಸ್ಸು", min_value=0, max_value=18)
+                children.append({"name": child_name, "age": child_age})
 
-        if st.button("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ"):
-            if parent_name and phone and address and all(child["name"] for child in children):
-                token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                save_appointment(date, parent_name, phone, address, num_children, children, slot, token)
-                st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ನಿಮ್ಮ ಟೋಕನ್ ಸಂಖ್ಯೆ {token} ಆಗಿದೆ.")
-            else:
-                st.error("ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+            if st.button("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ"):
+                if parent_name and phone and address and all(child["name"] for child in children):
+                    token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    save_appointment(date, parent_name, phone, address, num_children, children, slot, token)
+                    st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ನಿಮ್ಮ ಟೋಕನ್ ಸಂಖ್ಯೆ {token} ಆಗಿದೆ.")
+                else:
+                    st.error("ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
 
 # Main Function
 def main():
@@ -296,5 +279,5 @@ def main():
     elif st.session_state.page == "Prescription Entry":
         prescription_page()
 
-# Run the app
-main()
+if __name__ == "__main__":
+    main()
