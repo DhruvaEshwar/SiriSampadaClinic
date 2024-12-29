@@ -198,7 +198,7 @@ def prescription_page():
             st.warning("No appointments found for the selected date")
 
 
-    def booking_page():
+def booking_page():
         render_sidebar()
 
         # Translate buttons at the top
