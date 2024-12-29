@@ -243,18 +243,18 @@ def booking_page():
         # Submit the booking
         if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", key="book_appointment_button"):
 
-        if parent_name and phone and address and num_children > 0 and child_details:
+            if parent_name and phone and address and num_children > 0 and child_details:
                 # Save appointment details in Firestore
-        save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot, token)
-        if st.session_state.language == "en":
-            st.success(f"Appointment booked successfully! Token: {token}")
-        else:
-            st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ಟೋಕನ್: {token}")
-        else:
-            if st.session_state.language == "en":
-                st.error("Please fill all the details before submitting.")
+                save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot, token)
+                if st.session_state.language == "en":
+                    st.success(f"Appointment booked successfully! Token: {token}")
+                else:
+                    st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ಟೋಕನ್: {token}")
             else:
-                st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+                if st.session_state.language == "en":
+                    st.error("Please fill all the details before submitting.")
+                else:
+                    st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
 
 # Main page routing
 if st.session_state.page == "Home":
