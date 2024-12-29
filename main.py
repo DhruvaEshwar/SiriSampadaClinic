@@ -241,7 +241,8 @@ def booking_page():
         token = f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         # Submit the booking
-        if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ"):
+            if st.button("Book Appointment" if st.session_state.language == "en" else "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", key="book_appointment_button"):
+
             if parent_name and phone and address and num_children > 0 and child_details:
                 # Save appointment details in Firestore
                 save_appointment(appointment_date, parent_name, phone, address, num_children, child_details, slot, token)
