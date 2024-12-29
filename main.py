@@ -172,6 +172,9 @@ def booking_page():
             st.error("ಭಾನುವಾರಗಳಲ್ಲಿ ನಿಗದಿಯನ್ನು ಬುಕ್ ಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಮತ್ತೊಂದು ದಿನ ಆಯ್ಕೆಮಾಡಿ.")
         return
 
+    # Select time slot for the appointment (if applicable)
+    slot = st.time_input("Select Appointment Time" if st.session_state.language == "en" else "ನಿಗದಿ ಸಮಯ ಆಯ್ಕೆಮಾಡಿ")
+
     # Enter personal details
     parent_name = st.text_input("Parent's Name" if st.session_state.language == "en" else "ಹೆತ್ತವರ ಹೆಸರು")
     phone = st.text_input("Phone Number" if st.session_state.language == "en" else "ಫೋನ್ ಸಂಖ್ಯೆ")
@@ -206,7 +209,6 @@ def booking_page():
                 st.error("Please fill all the details before submitting.")
             else:
                 st.error("ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
-
 
 
 def prescription_page():
