@@ -129,10 +129,7 @@ def home_page():
         """, unsafe_allow_html=True)
         st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
-    import streamlit as st
-    from datetime import datetime
-
-    def prescription_page():
+def prescription_page():
         render_sidebar()
 
         # Password Authentication
