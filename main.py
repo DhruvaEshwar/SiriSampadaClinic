@@ -25,21 +25,6 @@ except ValueError:
 
 db = firestore.client()
 
-# Sample translations dictionary
-translations = {
-    "home_title": {"en": "Welcome to Siri Sampada Child Care Clinic"},
-    "appointment_title": {"en": "Book Appointment"},
-    "sunday_warning": {"en": "Appointments cannot be booked for Sundays."},
-    "time_slot": {"en": "Select a Time Slot"},
-    "parent_name": {"en": "Parent's Name"},
-    "phone_number": {"en": "Phone Number"},
-    "address": {"en": "Address"},
-    "num_patients": {"en": "Number of Patients"},
-    "book_button": {"en": "Book Appointment"},
-    "appointment_saved": {"en": "Appointment successfully booked with Token:"},
-    "clinic_info": {"en": "Siri Sampada Child Care Clinic"}
-}
-
 # Initialize session state variables
 if "language" not in st.session_state:
     st.session_state.language = "en"  # Default to English
@@ -47,126 +32,269 @@ if "language" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 
-# Helper function to get available slots (mocked for demo)
-def get_available_slots(date):
-    return ["10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"]  # Sample slots
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True  # Sidebar is open by default
 
-# Helper function to save appointments (mock implementation)
-def save_appointment(date, parent_name, phone, address, num_patients, patient_details, slot, token):
-    st.write(f"Saving appointment: {date}, {parent_name}, {phone}, {address}, {slot}, {token}")
-    # Save to Firebase (mocked for simplicity)
-    db.collection("appointments").add({
+# Toggle sidebar visibility
+def toggle_sidebar():
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+
+# Sidebar with toggle arrow
+def render_sidebar():
+    if st.session_state.sidebar_open:
+        with st.sidebar:
+            st.button("➤ Close Sidebar / ಪಟ್ಟಿ बंद ಮಾಡಿ", on_click=toggle_sidebar)
+            st.title("Navigation / ಮಾರ್ಗದರ್ಶನ")
+            st.button("Home / ಮುಖ್ಯಪುಟ", on_click=lambda: st.session_state.update({"page": "Home"}))
+            st.button("Book Appointment / ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ", on_click=lambda: st.session_state.update({"page": "Book Appointment"}))
+            st.button("Prescription Entry / ಔಷಧಿ ಪ್ರವೇಶಿಸಿ", on_click=lambda: st.session_state.update({"page": "Prescription Entry"}))
+            st.radio("Select Language / ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ", ["en", "kn"], index=["en", "kn"].index(st.session_state.language), 
+                     on_change=lambda: st.session_state.update({"language": st.sidebar.radio("Select Language / ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ", ["en", "kn"])}))
+    else:
+        st.sidebar.button("➤ Open Sidebar / ಪಟ್ಟಿ ತೆರೆಯಿರಿ", on_click=toggle_sidebar)
+
+# Firebase helper functions
+def save_appointment(date, parent_name, phone, address, num_children, child_details, slot, token):
+    appointment_data = {
         "date": date,
         "parent_name": parent_name,
         "phone": phone,
         "address": address,
-        "num_patients": num_patients,
-        "patient_details": patient_details,
+        "num_children": num_children,
+        "child_details": child_details,
         "slot": slot,
-        "token": token
-    })
+        "token": token,
+        "created_at": datetime.now()
+    }
+    db.collection("appointments").document(token).set(appointment_data)
 
-# Sidebar navigation
-def navigate(page_name):
-    st.session_state.page = page_name
+def get_available_slots(date):
+    return ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "02:00 PM - 03:00 PM", "03:00 PM - 04:00 PM"]
 
-st.sidebar.title("Navigation")
-st.sidebar.button("Home", on_click=lambda: navigate("Home"))
-st.sidebar.button("Book Appointment", on_click=lambda: navigate("Book Appointment"))
-st.sidebar.button("Prescription Entry", on_click=lambda: navigate("Prescription Entry"))
+def get_appointments_on_date(date):
+    appointments_ref = db.collection("appointments").where("date", "==", date)
+    appointments = appointments_ref.stream()
+    return [app.to_dict() for app in appointments]
 
-# Pages
+# Home Page
 def home_page():
-    st.title(translations["home_title"][st.session_state.language])
+    render_sidebar()
 
-    # Welcome message
-    st.header(translations["clinic_info"][st.session_state.language])
-    st.write("**Phone no. :** 097428 52267")
+    # Translate buttons at the top
+    if st.session_state.language == "en":
+        st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "kn"}))
+    else:
+        st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "en"}))
 
-    # Clinic images
-    st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
-    st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
-
-    # About the doctor
-    st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
-    col1, col2 = st.columns([3, 2])
-    with col1:
-        st.write("""
-        **Dr. Keerthi B. J.**  
-        - M.D. (Pediatrics), Fellow in Neonatology  
-        - Neonatologist & Pediatrician  
-        - Associate Professor in Pediatrics, Mandya District Hospital  
-        """)
-    with col2:
-        st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
-
-    # Location and Google Maps button
-    st.subheader("Location")
-    st.write("Click the button below to open the clinic location in Google Maps:")
-    st.markdown("""
+    if st.session_state.language == "en":
+        st.title("Welcome to Siri Sampada Child Care Clinic")
+        st.header("Siri Sampada Child Care Clinic")
+        st.write("**Phone no. :** 097428 52267")
+        st.image("clinic_image_1.jpg", caption="Inside of the Clinic", use_container_width=True)
+        st.image("clinic_image_2.jpg", caption="Outside of the Clinic", use_container_width=True)
+        st.subheader("About the Doctor ~ Dr. Keerthi B. J.")
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            st.write("""
+            **Dr. Keerthi B. J.**  
+            - M.D. (Pediatrics), Fellow in Neonatology  
+            - Neonatologist & Pediatrician  
+            - Associate Professor in Pediatrics, Mandya District Hospital  
+            """)
+        with col2:
+            st.image("doctor_photo.jpg", caption="Dr. Keerthi B. J.", use_container_width=True)
+        st.subheader("Location")
+        st.markdown("""
             <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
                 <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
                     View on Google Maps
                 </button>
             </a>
         """, unsafe_allow_html=True)
+        st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
+    else:
+        st.title("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್‌ಗೆ ಸ್ವಾಗತ")
+        st.header("ಸಿರಿ ಸಂಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್")
+        st.write("**ಫೋನ್ ಸಂಖ್ಯೆ :** 097428 52267")
+        st.image("clinic_image_1.jpg", caption="ಕ್ಲಿನಿಕ್ ಒಳಗಿನ ಚಿತ್ರ", use_container_width=True)
+        st.image("clinic_image_2.jpg", caption="ಕ್ಲಿನಿಕ್ ಬಾಹ್ಯ ಚಿತ್ರ", use_container_width=True)
+        st.subheader("ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ. ಬಗ್ಗೆ ~")
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            st.write("""
+            **ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.**  
+            - ಎಂ.ಡಿ. (ಪಿಡಿಯಾಟ್ರಿಕ್ಸ್), ನಿಯೋನೇಟೋಲಾಜಿ ಫೆಲೋ  
+            - ನಿಯೋನೇಟೋಲಜಿಸ್ಟ್ ಮತ್ತು ಪೀಡಿಯಾಟ್ರಿಷಿಯನ್  
+            - ಮಾಣ್ಡ್ಯಾ ಜಿಲ್ಲಾ ಆಸ್ಪತ್ರೆಯ ಪೀಡಿಯಾಟ್ರಿಕ್ಸ್ ಅಸೋಸಿಯೇಟ್ ಪ್ರೊಫೆಸರ್  
+            """)
+        with col2:
+            st.image("doctor_photo.jpg", caption="ಡಾ. ಕೀರ್ತಿ ಬಿ. ಜಿ.", use_container_width=True)
+        st.subheader("ಸ್ಥಳ")
+        st.markdown("""
+            <a href="https://www.google.com/maps?q=Siri+Sampada+Child+Care+Clinic,+2nd+Cross+Rd,+Ashok+Nagar,+Mandya,+Karnataka+571401&hl=en" target="_blank">
+                <button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; cursor:pointer;">
+                    ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ನೋಡಿ
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
+        st.write("**ವಿಳಾಸ:** 2nd ಕ್ರಾಸ್ ರಸ್ತೆ, ಅಶೋಕ್ ನಗರ, ಮಂಡ್ಯ, ಕರ್ನಾಟಕ 571401")
 
-    # Address and phone
-    st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
 
-def appointment_page():
-    st.title(translations["appointment_title"][st.session_state.language])
-    st.markdown("Fill in the details below to book an appointment.")
+# Prescription Page (NO TRANSLATION)
+    def prescription_page():
+        render_sidebar()
 
-    today = datetime.now().date()
+        # Password Authentication
+        password = st.text_input("Enter Password to Access Prescription Page", type="password")
+        correct_password = "ssclinic"  # Updated password
+        if password != correct_password:
+            st.warning("Incorrect Password!")
+            return
 
-    # Create a list of available dates excluding Sundays
-    available_dates = [today + timedelta(days=i) for i in range(7)]
-    available_dates = [date for date in available_dates if date.weekday() != 6]  # Remove Sundays
+        # Select child with an appointment on that day
+        date = st.date_input("Select Appointment Date")
+        appointments = get_appointments_on_date(date)  # Fetch appointments for the selected date
+        child_options = [
+            {
+                "label": f"{app['parent_name']} - {child['name']}",
+                "name": child["name"],
+                "age": child["age"],
+            }
+            for app in appointments for child in app["child_details"]
+        ]
 
-    date = st.date_input("Select Appointment Date", min_value=available_dates[0], max_value=available_dates[-1])
-    if date.weekday() == 6:  # 6 is Sunday
-        st.warning(translations["sunday_warning"][st.session_state.language])
-        return
+        if child_options:
+            selected_child = st.selectbox(
+                "Select Child for Prescription",
+                [child["label"] for child in child_options]
+            )
 
-    available_slots = get_available_slots(date)
-    if not available_slots:
-        st.warning("No available slots for the selected date.")
-        return
+            # Fetch selected child details
+            child_info = next(child for child in child_options if child["label"] == selected_child)
+            st.markdown(f"### Child Name: {child_info['name']} | Age: {child_info['age']} years")
+            st.markdown(f"**Appointment Date: {date} | Time: {datetime.datetime.now().strftime('%I:%M %p')}**")
 
-    slot = st.selectbox("Select a Time Slot", available_slots)
-    parent_name = st.text_input("Parent's Name")
-    phone = st.text_input("Phone Number")
-    address = st.text_area("Address")
+            # Prescription Form
+            disease = st.text_area("Enter Disease")
 
-    num_patients = st.number_input("Number of Patients", min_value=1, max_value=5)
+            # Medicine Details
+            if "medicine_data" not in st.session_state:
+                st.session_state["medicine_data"] = []
 
-    patient_details = []
-    for i in range(num_patients):
-        st.write(f"Details for Patient {i + 1}:")
-        patient_name = st.text_input(f"Patient {i + 1} Name")
-        patient_age = st.text_input(f"Patient {i + 1} Age")
-        patient_details.append({"name": patient_name, "age": patient_age})
+            medicine_name = st.text_input("Enter Medicine Name")
+            before_after_food = st.selectbox(
+                "Before or After Food", ["Before Food", "After Food"]
+            )
+            timings = st.multiselect(
+                "Select Timing", ["Morning", "Afternoon", "Evening"]
+            )
 
-    if st.button("Book Appointment"):
-        if parent_name and phone and address and all(pd["name"] and pd["age"] for pd in patient_details):
-            token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
-            st.success(f"Appointment successfully booked with Token: {token}")
+            if st.button("Add Medicine"):
+                if medicine_name and timings:
+                    medicine_entry = {
+                        "name": medicine_name,
+                        "food": before_after_food,
+                        "timings": ", ".join(timings),
+                    }
+                    st.session_state["medicine_data"].append(medicine_entry)
+                    st.success("Medicine added successfully!")
+
+            # Display Added Medicines
+            if st.session_state["medicine_data"]:
+                st.subheader("Added Medicines")
+                for idx, med in enumerate(st.session_state["medicine_data"], start=1):
+                    st.write(
+                        f"{idx}. **{med['name']}** - {med['food']} - {med['timings']}"
+                    )
+
+            # Save Button
+            if st.button("Save Prescription"):
+                st.success("Prescription saved successfully!")
         else:
-            st.error("Please fill in all details.")
+            st.warning("No appointments found for the selected date")
 
-def prescription_page():
-    st.title("Prescription Entry")
-    st.write("This page is under construction.")
 
-# Main function
+# Booking Page with Translation
+def booking_page():
+    render_sidebar()
+
+    # Translate buttons at the top
+    if st.session_state.language == "en":
+        st.button("Translate to Kannada / ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "kn"}))
+    else:
+        st.button("Translate to English / ಇಂಗ್ಲೀಷ್‌ಗೆ ಭಾಷಾಂತರಿಸಿ", on_click=lambda: st.session_state.update({"language": "en"}))
+
+    if st.session_state.language == "en":
+        st.title("Book Appointment")
+        st.markdown("Fill in the details below to book an appointment.")
+        today = datetime.now().date()
+        available_dates = [today + timedelta(days=i) for i in range(7) if (today + timedelta(days=i)).weekday() != 6]
+        date = st.date_input("Select a Date", min_value=available_dates[0], max_value=available_dates[-1])
+        if date.weekday() == 6:
+            st.warning("Appointments cannot be booked for Sundays.")
+            return
+        slot = st.selectbox("Select a Time Slot", get_available_slots(date))
+        parent_name = st.text_input("Parent's Name")
+        phone = st.text_input("Phone Number")
+        address = st.text_area("Address")
+
+        # Number of children with plus and minus controls
+        num_children = st.number_input("Number of Children", min_value=1, max_value=5)
+
+        children = []
+        for i in range(num_children):
+            st.subheader(f"Child {i+1}")
+            child_name = st.text_input(f"Name of Child {i+1}")
+            child_age = st.number_input(f"Age of Child {i+1}", min_value=0, max_value=18)
+            children.append({"name": child_name, "age": child_age})
+
+        if st.button("Book Appointment"):
+            if parent_name and phone and address and all(child["name"] for child in children):
+                token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                save_appointment(date, parent_name, phone, address, num_children, children, slot, token)
+                st.success(f"Appointment successfully booked! Your token number is {token}.")
+            else:
+                st.error("Please fill in all the details.")
+    else:
+        st.title("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ")
+        st.markdown("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಲು ಕೆಳಗಿನ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+        today = datetime.now().date()
+        available_dates = [today + timedelta(days=i) for i in range(7) if (today + timedelta(days=i)).weekday() != 6]
+        date = st.date_input("ದಿನಾಂಕವನ್ನು ಆಯ್ಕೆಮಾಡಿ", min_value=available_dates[0], max_value=available_dates[-1])
+        if date.weekday() == 6:
+            st.warning("ಆದಿತ್ಯವಾರಗಳಲ್ಲಿ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್‌ಗಳನ್ನು ಬುಕ್ ಮಾಡಲಾಗುವುದಿಲ್ಲ.")
+            return
+        slot = st.selectbox("ಸಮಯ ಸ್ಲಾಟ್ ಆಯ್ಕೆಮಾಡಿ", get_available_slots(date))
+        parent_name = st.text_input("ಪೋಷಕರ ಹೆಸರು")
+        phone = st.text_input("ದೂರವಾಣಿ ಸಂಖ್ಯೆ")
+        address = st.text_area("ವಿಳಾಸ")
+
+        # Number of children with plus and minus controls
+        num_children = st.number_input("ಮಕ್ಕಳ ಸಂಖ್ಯೆ", min_value=1, max_value=5)
+
+        children = []
+        for i in range(num_children):
+            st.subheader(f"ಮಗು {i+1}")
+            child_name = st.text_input(f"ಮಗು {i+1} ಹೆಸರು")
+            child_age = st.number_input(f"ಮಗು {i+1} ವಯಸ್ಸು", min_value=0, max_value=18)
+            children.append({"name": child_name, "age": child_age})
+
+        if st.button("ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಿ"):
+            if parent_name and phone and address and all(child["name"] for child in children):
+                token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                save_appointment(date, parent_name, phone, address, num_children, children, slot, token)
+                st.success(f"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ನಿಮ್ಮ ಟೋಕನ್ ಸಂಖ್ಯೆ {token} ಆಗಿದೆ.")
+            else:
+                st.error("ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಪೂರ್ತಿಗೊಳಿಸಿ.")
+
+# Main Function
 def main():
     if st.session_state.page == "Home":
         home_page()
     elif st.session_state.page == "Book Appointment":
-        appointment_page()
+        booking_page()
     elif st.session_state.page == "Prescription Entry":
         prescription_page()
 
+# Run the app
 main()
