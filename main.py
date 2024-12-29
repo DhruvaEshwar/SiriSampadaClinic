@@ -60,13 +60,18 @@ def save_appointment(date, parent_name, phone, address, num_children, child_deta
     })
 
 def get_appointments_on_date(date):
-        # Ensure the date is in datetime format to match Firestore's Timestamp
-        if isinstance(date, datetime.date):
-            # Convert date to datetime (midnight time)
-            date = datetime.combine(date, datetime.min.time())
+    # Check if the date is a datetime object, then strip the time
+    if isinstance(date, datetime):
+        date = date.date()  # Convert datetime to just the date part (midnight time)
 
-        # Now perform the query with the correct datetime format
-        return [app.to_dict() for app in db.collection("appointments").where("date", "==", date).stream()]
+    # Now perform the query with the correct date format
+    appointments = [
+        app.to_dict() for app in db.collection("appointments")
+        .where("date", "==", date)  # Compare with just the date part
+        .stream()
+    ]
+
+    return appointments
 
 # Function to get available slots (add this definition)
 def get_available_slots(date):
