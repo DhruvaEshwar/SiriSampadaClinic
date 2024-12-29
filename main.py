@@ -210,7 +210,7 @@ def booking_page():
         child_disease = st.text_area(f"Disease (if any) for Child {i + 1}")
         child_details.append({"name": child_name, "age": child_age, "disease": child_disease})
 
-    if st.button("Book Appointment"):
+    if st.button("Book Appointment", key=f"book_button_{date}"):
         save_appointment(date, parent_name, phone, address, num_children, child_details, slot)
         st.success(f"Appointment booked successfully for {slot}.")
 
