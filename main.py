@@ -45,47 +45,59 @@ def render_sidebar():
         st.button("Prescription Entry", on_click=lambda: setattr(st.session_state, "page", "Prescription Entry"))
         st.session_state.language = st.radio("Language", ["en", "kn"], index=["en", "kn"].index(st.session_state.language))
 
-# Firebase Helpers
-    # Firebase Helpers
-def save_appointment(date, parent_name, phone, address, num_children, child_details, slot):
-      # Use date as the document name (YYYY-MM-DD format)
-      date_str = date.strftime('%Y-%m-%d')
-      appointment_ref = db.collection("appointments").document(date_str)
+def save_appointment(date, parent_name, phone, address, num_children, child_details, slot, token=None):
+    # Use date as the document name (YYYY-MM-DD format)
+    date_str = date.strftime('%Y-%m-%d')
+    appointment_ref = db.collection("appointments").document(date_str)
 
-      # Get existing appointments for the date (if any)
-      existing_appointments = appointment_ref.get()
-      if existing_appointments.exists:
-          appointments = existing_appointments.to_dict()['appointments']
-      else:
-          appointments = []
+    # Get existing appointments for the date (if any)
+    existing_appointments = appointment_ref.get()
+    if existing_appointments.exists:
+        appointments = existing_appointments.to_dict()['appointments']
+    else:
+        appointments = []
 
-      # Append new appointment
-      appointment_data = {
-          "parent_name": parent_name,
-          "phone": phone,
-          "address": address,
-          "num_children": num_children,
-          "child_details": child_details,
-          "slot": slot,
-          "created_at": datetime.now()
-      }
-      appointments.append(appointment_data)
+    # If token is not provided, generate it based on existing appointments
+    if token is None:
+        token = len(appointments) + 1
 
-      # Save the updated appointments list under the date
-      appointment_ref.set({
-          "appointments": appointments
-      })
+    # Append new appointment
+    appointment_data = {
+        "parent_name": parent_name,
+        "phone": phone,
+        "address": address,
+        "num_children": num_children,
+        "child_details": child_details,
+        "slot": slot,
+        "created_at": datetime.now(),
+        "token": token
+    }
+    appointments.append(appointment_data)
+
+    # Save the updated appointments list under the date
+    appointment_ref.set({
+        "appointments": appointments
+    })
+
 
 def get_appointments_on_date(date):
-      date_str = date.strftime('%Y-%m-%d')
-      appointment_ref = db.collection("appointments").document(date_str)
+    try:
+        date_str = date.strftime('%Y-%m-%d')
+        appointment_ref = db.collection("appointments").document(date_str)
 
-      # Fetch appointments for the selected date
-      appointment_data = appointment_ref.get()
-      if appointment_data.exists:
-          return appointment_data.to_dict()['appointments']
-      else:
-          return []
+        # Fetch appointments for the selected date
+        appointment_data = appointment_ref.get()
+
+        # Check if the document exists
+        if appointment_data.exists:
+            return appointment_data.to_dict().get('appointments', [])
+        else:
+            return []  # Return an empty list if no appointments found
+
+    except Exception as e:
+        st.error(f"Error fetching appointments: {e}")
+        return []  # Return an empty list if there is an error
+
 
 
 
