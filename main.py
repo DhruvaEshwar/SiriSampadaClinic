@@ -25,152 +25,24 @@ except ValueError:
 
 db = firestore.client()
 
-# Initialize session state for language and button state
-if "language" not in st.session_state:
-    st.session_state.language = "english"  # Default language
+# Initialize session state for navigation
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
 
-if "translate_button_clicked" not in st.session_state:
-    st.session_state.translate_button_clicked = False  # Track button click state
+# Sidebar navigation
+def navigate(page_name):
+    st.session_state.page = page_name
 
-# Language toggle functions
-def translate_to_kannada():
-    st.session_state.language = "kannada"
-    st.session_state.translate_button_clicked = True
-
-def translate_to_english():
-    st.session_state.language = "english"
-    st.session_state.translate_button_clicked = False
-
-# Language translations
-translations = {
-    "home_title": {
-        "english": "Siri Sampada Child Care Clinic",
-        "kannada": "ಸಿರಿ ಸಮ್ಪದ ಚೈಲ್ಡ್ ಕೇರ್ ಕ್ಲಿನಿಕ್"
-    },
-    "appointment_title": {
-        "english": "Book an Appointment",
-        "kannada": "ಊರಿಗಾಗಿ ನೇಮಕಾತಿ ಬುಕ್ ಮಾಡಿ"
-    },
-    "parent_name": {
-        "english": "Parent's Name",
-        "kannada": "ಪೋಷಕನ ಹೆಸರು"
-    },
-    "phone_number": {
-        "english": "Phone Number",
-        "kannada": "ದೂರವಾಣಿ ಸಂಖ್ಯೆ"
-    },
-    "address": {
-        "english": "Address",
-        "kannada": "ವಿಳಾಸ"
-    },
-    "num_patients": {
-        "english": "Number of Patients",
-        "kannada": "ರೋಗಿಯ ಸಂಖ್ಯೆಯು"
-    },
-    "time_slot": {
-        "english": "Select Time Slot",
-        "kannada": "ಸಮಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ"
-    },
-    "book_button": {
-        "english": "Book Appointment",
-        "kannada": "ನೇಮಕಾತಿಯನ್ನು ಬುಕ್ ಮಾಡಿ"
-    },
-    "appointment_saved": {
-        "english": "Appointment booked successfully! Your token number is",
-        "kannada": "ನೇಮಕಾತಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಬುಕ್ ಮಾಡಲಾಗಿದೆ! ನಿಮ್ಮ ಟೋಕನ್ ಸಂಖ್ಯೆ"
-    },
-    "clinic_info": {
-        "english": "Welcome",
-        "kannada": "ಸ್ವಾಗತ"
-    },
-    "sunday_warning": {
-        "english": "Sunday is a holiday. Please select another day.",
-        "kannada": "ಭಾನುವಾರದಂದು ಹೋಳಿ. ದಯವಿಟ್ಟು ಇನ್ನೊಂದು ದಿನವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ."
-    },
-    "prescription_access": {
-        "english": "Prescription Access",
-        "kannada": "ಊದವು ಪ್ರವೇಶ"
-    },
-    "prescription_saved": {
-        "english": "Prescription saved successfully!",
-        "kannada": "ಊದವು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!"
-    }
-}
-
-# Functions for Firebase interactions
-def save_appointment(date, parent_name, phone, address, num_patients, patient_details, slot, token):
-    collection = db.collection(date)
-    collection.add({
-        "parent_name": parent_name,
-        "phone": phone,
-        "address": address,
-        "num_patients": num_patients,
-        "patient_details": patient_details,
-        "slot": slot,
-        "token": token,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    })
-
-def get_available_slots(date):
-    collection = db.collection(date.strftime("%Y-%m-%d"))
-    appointments = collection.stream()
-
-    all_slots = {
-        "8:00-8:30 AM": datetime.strptime("08:00", "%H:%M").time(),
-        "8:30-9:00 AM": datetime.strptime("08:30", "%H:%M").time(),
-        "9:00-9:30 AM": datetime.strptime("09:00", "%H:%M").time(),
-        "6:00-6:30 PM": datetime.strptime("18:00", "%H:%M").time(),
-        "6:30-7:00 PM": datetime.strptime("18:30", "%H:%M").time(),
-        "7:00-7:30 PM": datetime.strptime("19:00", "%H:%M").time(),
-        "7:30-8:00 PM": datetime.strptime("19:30", "%H:%M").time()
-    }
-
-    current_date = datetime.now().date()
-    current_time = datetime.now().time()
-
-    if date == current_date:
-        all_slots = {slot: start_time for slot, start_time in all_slots.items() if start_time > current_time}
-
-    slot_counts = {slot: 0 for slot in all_slots}
-    for doc in appointments:
-        slot = doc.to_dict()["slot"]
-        if slot in slot_counts:
-            slot_counts[slot] += 1
-
-    available_slots = [slot for slot, count in slot_counts.items() if count < 10]
-    return available_slots
-
-def validate_password(password):
-    return password == "dse@14"
-
-def get_children_for_today():
-    today = datetime.now().strftime("%Y-%m-%d")
-    collection = db.collection(today)
-    appointments = collection.stream()
-    children = []
-
-    for doc in appointments:
-        data = doc.to_dict()
-        for patient in data["patient_details"]:
-            children.append({
-                "name": patient["name"],
-                "age": patient["age"]
-            })
-    return children
-
-def save_prescription(child_name, prescription):
-    today = datetime.now().strftime("%Y-%m-%d")
-    collection = db.collection(today).document(child_name)
-    collection.set({
-        "prescription": prescription,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    })
+st.sidebar.title("Navigation")
+st.sidebar.button("Home", on_click=lambda: navigate("Home"))
+st.sidebar.button("Book Appointment", on_click=lambda: navigate("Book Appointment"))
+st.sidebar.button("Prescription Entry", on_click=lambda: navigate("Prescription Entry"))
 
 # Pages
 def home_page():
     st.title(translations["home_title"][st.session_state.language])
 
-    # Welcome message first
+    # Welcome message
     st.header(translations["clinic_info"][st.session_state.language])
     st.write("**Phone no. :** 097428 52267")
 
@@ -188,7 +60,6 @@ def home_page():
         - Neonatologist & Pediatrician  
         - Associate Professor in Pediatrics, Mandya District Hospital  
         """)
-
     with col2:
         st.markdown(
             """
@@ -222,7 +93,6 @@ def home_page():
     # Address and phone
     st.write("**Address:** 2nd Cross Rd, Ashok Nagar, Mandya, Karnataka 571401")
 
-
 def appointment_page():
     st.title(translations["appointment_title"][st.session_state.language])
     st.markdown("Fill in the details below to book an appointment.")
@@ -234,7 +104,7 @@ def appointment_page():
     available_dates = [date for date in available_dates if date.weekday() != 6]  # Remove Sundays
 
     # Select a date, but only allow available dates (i.e., excluding Sundays)
-    date = st.date_input(translations["appointment_title"][st.session_state.language], min_value=available_dates[0], max_value=available_dates[-1])
+    date = st.date_input("Select Appointment Date", min_value=available_dates[0], max_value=available_dates[-1])
 
     # Check if the selected date is a Sunday
     if date.weekday() == 6:  # 6 is Sunday
@@ -254,17 +124,23 @@ def appointment_page():
 
     num_patients = st.number_input(translations["num_patients"][st.session_state.language], min_value=1, max_value=5)
 
+    patient_details = []
+    for i in range(num_patients):
+        st.write(f"Details for Patient {i + 1}:")
+        patient_name = st.text_input(f"Patient {i + 1} Name")
+        patient_age = st.text_input(f"Patient {i + 1} Age")
+        patient_details.append({"name": patient_name, "age": patient_age})
+
     if st.button(translations["book_button"][st.session_state.language]):
-        if parent_name and phone and address:
+        if parent_name and phone and address and all(pd["name"] and pd["age"] for pd in patient_details):
             token = f"TOKEN{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            patient_details = [{"name": st.text_input("Patient Name"), "age": st.text_input("Age")} for _ in range(num_patients)]
             save_appointment(date.strftime("%Y-%m-%d"), parent_name, phone, address, num_patients, patient_details, slot, token)
             st.success(f"{translations['appointment_saved'][st.session_state.language]} {token}")
         else:
             st.error("Please fill in all details.")
 
 def prescription_page():
-    st.title(translations["prescription_access"]["english"])  # No translation here
+    st.title("Prescription Entry")  # No translation here
 
     children = get_children_for_today()
     if not children:
@@ -274,23 +150,15 @@ def prescription_page():
         prescription = st.text_area("Enter prescription for the child")
         if st.button("Save Prescription"):
             save_prescription(selected_child, prescription)
-            st.success(translations["prescription_saved"]["english"])
+            st.success("Prescription saved successfully!")
 
-# Main page selection
+# Main Function
 def main():
-    page = st.selectbox("Select a page", ["Home", "Book Appointment", "Prescription Entry"])
-
-    if page == "Home":
-        if st.session_state.language == "english" and not st.session_state.translate_button_clicked:
-            if st.button("Translate to Kannada"):
-                translate_to_kannada()
-        elif st.session_state.language == "kannada" and st.session_state.translate_button_clicked:
-            if st.button("Translate Back to English"):
-                translate_to_english()
+    if st.session_state.page == "Home":
         home_page()
-    elif page == "Book Appointment":
+    elif st.session_state.page == "Book Appointment":
         appointment_page()
-    elif page == "Prescription Entry":
+    elif st.session_state.page == "Prescription Entry":
         prescription_page()
 
 main()
